@@ -1,0 +1,11 @@
+node_modules/
+dist/
+*.exe
+*.blockmap
+out/
+win-unpacked/
+win-unpacked.tmp/
+screenshot*.png
+extracted-*/
+original-*/
+test-socks.js

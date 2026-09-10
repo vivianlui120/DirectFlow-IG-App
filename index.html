@@ -1,0 +1,2173 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>DirectFlow IG</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','Microsoft YaHei',sans-serif; background:#f5f7fa; color:#202124; -webkit-font-smoothing:antialiased; }
+
+/* 顶部导航 */
+.topbar { background:#fff; border-bottom:1px solid #e8eaed; padding:0 28px; height:56px; display:flex; align-items:center; justify-content:space-between; }
+.topbar h1 { font-size:16px; font-weight:600; color:#202124; letter-spacing:.3px; }
+.topbar h1 span { font-weight:400; font-size:12px; color:#5f6368; margin-left:8px; }
+.topbar .badge { background:#e8f0fe; color:#1a73e8; padding:4px 12px; border-radius:4px; font-size:12px; font-weight:500; }
+
+/* 标签页 */
+.tabs { display:flex; background:#fff; border-bottom:1px solid #e8eaed; padding:0 28px; gap:4px; }
+.tab { padding:12px 20px; cursor:pointer; font-size:13px; color:#5f6368; border-bottom:2px solid transparent; transition:all .15s; user-select:none; font-weight:500; }
+.tab:hover { color:#1a73e8; background:#f8f9fa; }
+.tab.active { color:#1a73e8; border-bottom-color:#1a73e8; }
+
+/* 内容区 */
+.content { padding:24px 28px; }
+.page { display:none; }
+.page.active { display:block; }
+
+/* 卡片 */
+.card { background:#fff; border:1px solid #e8eaed; border-radius:8px; padding:20px; margin-bottom:16px; }
+.card h3 { font-size:14px; font-weight:600; color:#202124; margin-bottom:16px; padding-bottom:12px; border-bottom:1px solid #f1f3f4; }
+
+/* 统计卡片 */
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:16px; }
+.stat-card { background:#fff; border:1px solid #e8eaed; border-radius:8px; padding:18px 20px; }
+.stat-card .label { font-size:12px; color:#5f6368; margin-bottom:8px; font-weight:500; }
+.stat-card .value { font-size:28px; font-weight:700; color:#202124; }
+.stat-card .sub { font-size:11px; color:#9aa0a6; margin-top:6px; }
+
+/* 表单 */
+.form-row { display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+.form-group { flex:1; min-width:140px; }
+.form-group label { display:block; font-size:12px; color:#5f6368; margin-bottom:6px; font-weight:500; }
+.form-group input, .form-group select, .form-group textarea { width:100%; padding:8px 12px; border:1px solid #dadce0; border-radius:4px; font-size:13px; outline:none; transition:border .15s,box-shadow .15s; background:#fff; }
+.form-group input:focus, .form-group select:focus { border-color:#1a73e8; box-shadow:0 0 0 2px rgba(26,115,232,.15); }
+
+/* 按钮 */
+.btn { padding:8px 20px; border:1px solid transparent; border-radius:4px; cursor:pointer; font-size:13px; transition:all .15s; font-weight:500; background:#fff; }
+.btn-primary { background:#1a73e8; color:#fff; border-color:#1a73e8; }
+.btn-primary:hover { background:#1765cc; }
+.btn-success { background:#1e8e3e; color:#fff; border-color:#1e8e3e; }
+.btn-success:hover { background:#187934; }
+.btn-danger { background:#fff; color:#d93025; border-color:#dadce0; }
+.btn-danger:hover { background:#fce8e6; border-color:#d93025; }
+.btn-warning { background:#f9ab00; color:#fff; border-color:#f9ab00; }
+.btn-warning:hover { background:#e09a00; }
+.btn-gray { background:#fff; color:#5f6368; border-color:#dadce0; }
+.btn-gray:hover { background:#f8f9fa; }
+.btn-sm { padding:5px 14px; font-size:12px; }
+.btn:disabled { opacity:.5; cursor:not-allowed; }
+
+/* 表格 */
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { background:#f8f9fa; padding:10px 12px; text-align:left; font-weight:600; color:#5f6368; border-bottom:1px solid #e8eaed; font-size:12px; }
+td { padding:10px 12px; border-bottom:1px solid #f1f3f4; color:#202124; }
+tr:hover { background:#f8f9fa; }
+
+/* 状态标签 */
+.status { display:inline-block; padding:2px 10px; border-radius:4px; font-size:11px; font-weight:500; }
+.status-active { background:#e6f4ea; color:#1e8e3e; }
+.status-inactive { background:#f1f3f4; color:#5f6368; }
+.status-warming { background:#fef7e0; color:#f9ab00; }
+.status-error { background:#fce8e6; color:#d93025; }
+.status-banned { background:#fce8e6; color:#d93025; }
+.status-need_2fa { background:#fef7e0; color:#f9ab00; }
+.status-login_failed { background:#fce8e6; color:#d93025; }
+.status-daily_limit { background:#fef7e0; color:#f9ab00; }
+.status-restricted { background:#fce8e6; color:#d93025; }
+
+/* 日志区 */
+.log-box { background:#1e1e1e; color:#d4d4d4; border-radius:6px; padding:14px 16px; height:320px; overflow-y:auto; font-family:'Consolas','Monaco','Courier New',monospace; font-size:12px; line-height:1.8; }
+.log-box .log-info { color:#569cd6; }
+.log-box .log-warn { color:#dcdcaa; }
+.log-box .log-error { color:#f48771; }
+.log-box .log-ok { color:#6a9955; }
+.log-box .time { color:#6a6a6a; margin-right:10px; }
+
+/* 状态横幅 */
+.status-banner { padding:14px 20px; border-radius:8px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; border:1px solid; }
+.status-banner.running { background:#e6f4ea; border-color:#ceead6; }
+.status-banner.stopped { background:#f8f9fa; border-color:#e8eaed; }
+.status-banner .status-text { font-size:14px; font-weight:600; color:#202124; }
+.status-banner .pulse { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:10px; vertical-align:middle; }
+.status-banner.running .pulse { background:#1e8e3e; animation:pulse 1.5s infinite; }
+.status-banner.stopped .pulse { background:#9aa0a6; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+/* 进度条 */
+.progress-bar { background:#e8eaed; border-radius:4px; height:6px; overflow:hidden; }
+.progress-fill { height:100%; background:#1a73e8; border-radius:4px; transition:width .3s; }
+
+/* 信息提示条 */
+.info-bar { background:#e8f0fe; border:1px solid #d2e3fc; border-radius:8px; padding:14px 20px; margin-bottom:16px; font-size:13px; color:#3c4043; line-height:1.6; }
+.info-bar strong { color:#1a73e8; }
+
+/* 模式选择卡片 */
+.mode-cards { display:flex; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.mode-card { flex:1; min-width:110px; padding:14px 12px; border:2px solid #e8eaed; border-radius:8px; cursor:pointer; text-align:center; transition:all .15s; background:#fff; }
+.mode-card:hover { border-color:#1a73e8; }
+.mode-card.selected { border-color:#1a73e8; background:#e8f0fe; }
+.mode-card .mode-title { font-size:13px; font-weight:600; color:#202124; margin-bottom:4px; }
+.mode-card .mode-desc { font-size:11px; color:#5f6368; }
+
+/* 环形进度 */
+.ring-container { position:relative; width:90px; height:90px; }
+.ring-container svg { transform:rotate(-90deg); }
+.ring-bg { fill:none; stroke:#e8eaed; stroke-width:7; }
+.ring-fill { fill:none; stroke:#1a73e8; stroke-width:7; stroke-linecap:round; transition:stroke-dashoffset .3s; }
+.ring-text { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+.ring-text .pct { font-size:18px; font-weight:700; color:#202124; }
+.ring-text .lbl { font-size:10px; color:#9aa0a6; }
+
+/* 滚动条 */
+::-webkit-scrollbar { width:6px; height:6px; }
+::-webkit-scrollbar-thumb { background:#dadce0; border-radius:3px; }
+::-webkit-scrollbar-thumb:hover { background:#bdc1c6; }
+::-webkit-scrollbar-track { background:transparent; }
+
+/* 复选框行 */
+.check-row { display:flex; align-items:center; gap:10px; padding:7px 10px; border-radius:4px; cursor:pointer; font-size:13px; transition:background .1s; }
+.check-row:hover { background:#f8f9fa; }
+.check-row input[type="checkbox"] { accent-color:#1a73e8; }
+
+/* 小统计块 */
+.mini-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px; }
+.mini-stat { text-align:center; padding:10px 6px; border-radius:6px; background:#f8f9fa; }
+.mini-stat .num { font-size:18px; font-weight:700; color:#202124; }
+.mini-stat .lbl { font-size:11px; color:#5f6368; margin-top:2px; }
+/* 会员中心弹窗 - Cursor 风格 */
+.license-modal { position:fixed; inset:0; z-index:9999; display:flex; align-items:center; justify-content:center; }
+.license-modal-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); }
+.license-modal-box { position:relative; width:480px; max-width:90vw; background:#1a1a2e; border-radius:16px; padding:28px; box-shadow:0 24px 64px rgba(0,0,0,0.5); border:1px solid rgba(255,255,255,0.08); }
+.license-modal-header { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+.license-logo { flex-shrink:0; }
+.license-title { font-size:18px; font-weight:700; color:#fff; }
+.license-subtitle { font-size:13px; color:#8b8b9e; margin-top:2px; }
+.license-close { position:absolute; top:16px; right:16px; background:none; border:none; color:#8b8b9e; font-size:24px; cursor:pointer; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; transition:all .2s; }
+.license-close:hover { background:rgba(255,255,255,0.08); color:#fff; }
+.license-status-card { background:rgba(255,255,255,0.04); border-radius:10px; padding:14px 16px; margin-bottom:20px; }
+.license-status-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; font-size:13px; }
+.license-status-label { color:#8b8b9e; }
+.license-status-value { color:#e0e0e8; font-weight:500; }
+.license-machine-code { font-family:monospace; font-size:12px; background:rgba(124,58,237,0.15); color:#a78bfa; padding:3px 8px; border-radius:4px; }
+.license-plans { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px; }
+.license-plan-card { position:relative; background:rgba(255,255,255,0.04); border:1.5px solid rgba(255,255,255,0.08); border-radius:10px; padding:14px 10px; text-align:center; cursor:pointer; transition:all .2s; }
+.license-plan-card:hover { border-color:rgba(124,58,237,0.5); background:rgba(124,58,237,0.08); }
+.license-plan-card.selected { border-color:#7c3aed; background:rgba(124,58,237,0.12); box-shadow:0 0 0 3px rgba(124,58,237,0.15); }
+.license-plan-card.recommended { border-color:#7c3aed; }
+.license-plan-badge { position:absolute; top:-8px; left:50%; transform:translateX(-50%); background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff; font-size:10px; padding:2px 8px; border-radius:10px; font-weight:600; }
+.license-plan-name { font-size:13px; color:#c0c0d0; margin-bottom:6px; }
+.license-plan-price { margin-bottom:4px; }
+.license-plan-price .price-num { font-size:20px; font-weight:700; color:#fff; }
+.license-plan-price .price-unit { font-size:11px; color:#8b8b9e; }
+.license-plan-desc { font-size:11px; color:#6b6b7e; }
+.license-actions { text-align:center; }
+.license-upgrade-btn { width:100%; padding:12px; background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; transition:all .2s; }
+.license-upgrade-btn:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(124,58,237,0.4); }
+.license-upgrade-btn:active { transform:translateY(0); }
+.license-tip { font-size:12px; color:#6b6b7e; margin-top:10px; }
+.license-loading { text-align:center; padding:20px; color:#8b8b9e; font-size:13px; }
+.license-spinner { width:32px; height:32px; border:3px solid rgba(124,58,237,0.2); border-top-color:#7c3aed; border-radius:50%; margin:0 auto 12px; animation:spin 0.8s linear infinite; }
+@keyframes spin { to { transform:rotate(360deg); } }
+
+/* 登录/注册页面 */
+.auth-page { position:fixed; inset:0; z-index:10000; background:linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%); display:flex; align-items:center; justify-content:center; }
+.auth-box { width:380px; max-width:90vw; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:36px 32px; backdrop-filter:blur(10px); }
+.auth-logo { text-align:center; margin-bottom:20px; }
+.auth-title { text-align:center; font-size:22px; font-weight:700; color:#fff; margin:0 0 6px 0; }
+.auth-subtitle { text-align:center; font-size:13px; color:#8b8b9e; margin:0 0 24px 0; }
+.auth-field { margin-bottom:16px; }
+.auth-field label { display:block; font-size:13px; color:#c0c0d0; margin-bottom:6px; }
+.auth-field input { width:100%; padding:10px 12px; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; color:#fff; font-size:14px; box-sizing:border-box; outline:none; transition:border-color .2s; }
+.auth-field input:focus { border-color:#7c3aed; }
+.auth-field input::placeholder { color:#5f5f7e; }
+.auth-error { background:rgba(220,38,38,0.15); color:#fca5a5; padding:8px 12px; border-radius:6px; font-size:12px; margin-bottom:12px; }
+.auth-btn { width:100%; padding:12px; background:linear-gradient(135deg,#7c3aed,#2563eb); color:#fff; border:none; border-radius:8px; font-size:15px; font-weight:600; cursor:pointer; transition:all .2s; }
+.auth-btn:hover { transform:translateY(-1px); box-shadow:0 8px 24px rgba(124,58,237,0.4); }
+.auth-btn:active { transform:translateY(0); }
+.auth-btn:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+.auth-switch { text-align:center; margin-top:16px; font-size:13px; color:#8b8b9e; }
+.auth-switch a { color:#a78bfa; text-decoration:none; margin-left:4px; }
+.auth-switch a:hover { text-decoration:underline; }
+.auth-tip { text-align:center; font-size:11px; color:#5f5f7e; margin-top:16px; }
+
+/* 软件更新弹窗 */
+.update-modal { position:fixed; top:0; left:0; right:0; bottom:0; z-index:10000; display:flex; align-items:center; justify-content:center; }
+.update-modal-overlay { position:absolute; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(4px); }
+.update-modal-box { position:relative; width:420px; background:#1a1a2e; border:1px solid rgba(255,255,255,0.1); border-radius:16px; padding:28px; box-shadow:0 20px 60px rgba(0,0,0,0.5); }
+.update-modal-header { display:flex; align-items:center; gap:14px; margin-bottom:20px; }
+.update-icon { width:52px; height:52px; border-radius:12px; background:linear-gradient(135deg,#7C3AED,#2563EB); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+.update-title { font-size:18px; font-weight:700; color:#fff; }
+.update-subtitle { font-size:13px; color:#8b8b9e; margin-top:2px; }
+.update-body { color:#c4c4d4; font-size:14px; line-height:1.6; margin-bottom:24px; }
+.update-body p { margin:0; }
+.update-progress { margin-top:16px; }
+.update-progress-bar { width:100%; height:8px; background:rgba(255,255,255,0.1); border-radius:4px; overflow:hidden; }
+.update-progress-fill { height:100%; background:linear-gradient(90deg,#7C3AED,#2563EB); border-radius:4px; transition:width 0.3s; }
+.update-progress-text { text-align:center; font-size:12px; color:#8b8b9e; margin-top:8px; }
+.update-actions { display:flex; gap:12px; justify-content:flex-end; }
+.update-btn-cancel { padding:10px 20px; border:1px solid rgba(255,255,255,0.2); background:transparent; color:#c4c4d4; border-radius:8px; font-size:14px; cursor:pointer; transition:all 0.2s; }
+.update-btn-cancel:hover { border-color:rgba(255,255,255,0.4); color:#fff; }
+.update-btn-confirm { padding:10px 24px; border:none; background:linear-gradient(135deg,#7C3AED,#2563EB); color:#fff; border-radius:8px; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+.update-btn-confirm:hover { transform:translateY(-1px); box-shadow:0 4px 16px rgba(124,58,237,0.4); }
+.update-btn-confirm:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+
+</style>
+</head>
+<body>
+
+<!-- 登录/注册页面 -->
+<div id="authPage" class="auth-page">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <img src="logo-full.png" style="height:48px;width:auto" alt="智连 IG">
+    </div>
+    <h2 class="auth-title" id="authTitle">登录智连 IG</h2>
+    <p class="auth-subtitle" id="authSubtitle">登录后享受7天免费试用</p>
+
+    <div class="auth-form">
+      <div class="auth-field">
+        <label>邮箱</label>
+        <input type="email" id="authEmail" placeholder="your@email.com">
+      </div>
+      <div class="auth-field">
+        <label>密码</label>
+        <input type="password" id="authPassword" placeholder="至少6位">
+      </div>
+      <div class="auth-error" id="authError" style="display:none"></div>
+      <button class="auth-btn" id="authSubmitBtn" onclick="authSubmit()">登录</button>
+    </div>
+
+    <div class="auth-switch">
+      <span id="authSwitchText">还没有账号？</span>
+      <a href="javascript:void(0)" onclick="authToggle()" id="authSwitchLink">立即注册</a>
+    </div>
+
+    <div class="auth-tip">注册即送7天免费试用 · 每台设备仅限一次</div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-page="dashboard" data-i18n="tab.dashboard">仪表盘</div>
+  <div class="tab" data-page="accounts" data-i18n="tab.accounts">账号管理</div>
+  <div class="tab" data-page="warmup" data-i18n="tab.warmup">智能养号</div>
+  <div class="tab" data-page="scraper" data-i18n="tab.scraper">获客采集</div>
+  <div class="tab" data-page="massdm" data-i18n="tab.massdm">群发系统</div>
+  <div class="tab" data-page="autoreply" data-i18n="tab.autoreply">自动回复</div>
+  <div class="tab" data-page="settings" data-i18n="tab.settings">设置</div>
+</div>
+
+<div class="content">
+
+  <!-- 仪表盘 -->
+  <div class="page active" id="page-dashboard">
+    <div class="info-bar">
+      <strong>双层解耦架构</strong> — 主业务逻辑（数据库 / 任务调度 / 养号引擎）位于 <code>src/core/</code>，所有 Puppeteer 网页操作与 DOM 选择器集中于 <code>src/ig-driver/</code>，IG 改版只需修改驱动层。所有自动化任务默认 headless 静默运行，无浏览器弹窗。
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="label">账号总数</div><div class="value" id="statAccounts">0</div><div class="sub">已配置 IG 账号</div></div>
+      <div class="stat-card"><div class="label">活跃账号</div><div class="value" id="statActive" style="color:#1e8e3e">0</div><div class="sub">正常可用</div></div>
+      <div class="stat-card"><div class="label">累计点赞</div><div class="value" id="statLikes" style="color:#f9ab00">0</div><div class="sub">养号期间产生</div></div>
+      <div class="stat-card"><div class="label">养号等级</div><div class="value" id="statLevel" style="color:#1a73e8">0</div><div class="sub">平均权重 / 10</div></div>
+    </div>
+
+    <div class="card">
+      <h3>最近养号记录</h3>
+      <div id="recentLogsTable">暂无记录</div>
+    </div>
+  </div>
+
+  <!-- 账号管理（整合浏览器控制） -->
+  <div class="page" id="page-accounts">
+    <div class="card">
+      <h3>添加账号</h3>
+      <div class="form-row">
+        <div class="form-group"><label>IG 用户名</label><input id="accUsername" placeholder="example_user"></div>
+        <div class="form-group"><label>IG 密码</label><input id="accPassword" type="password" placeholder="登录密码"></div>
+        <div class="form-group"><label>2FA 密钥（Base32）</label><input id="accTwofa" placeholder="JBSWY3DPEHPK3PXP，自动验证"></div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px">
+        <label>IG Cookies（新号必填，降低封号风险）</label>
+        <textarea id="accCookies" rows="3" placeholder='粘贴浏览器导出的 Cookies JSON，例如：[{"name":"sessionid","value":"xxx","domain":".instagram.com"}]' style="width:100%;padding:8px 10px;border:1px solid #dadce0;border-radius:4px;font-size:12px;resize:vertical;font-family:monospace"></textarea>
+        <div style="font-size:11px;color:#9aa0a6;margin-top:4px">从浏览器登录 IG 后导出 Cookies 粘贴到此处，软件将直接注入登录态，跳过账号密码登录，新号强烈建议填写</div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>代理类型</label>
+          <select id="accProxyType" style="width:100%;padding:8px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px">
+            <option value="http">HTTP / HTTPS</option>
+            <option value="socks5">Socks5</option>
+          </select>
+        </div>
+        <div class="form-group"><label>代理 IP（独立 IP）</label><input id="accProxyHost" placeholder="127.0.0.1"></div>
+        <div class="form-group"><label>代理端口</label><input id="accProxyPort" placeholder="8080"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>代理账号</label><input id="accProxyUser" placeholder="可选"></div>
+        <div class="form-group"><label>代理密码</label><input id="accProxyPass" type="password" placeholder="可选"></div>
+      </div>
+      <button class="btn btn-primary" onclick="addAccount()">添加账号</button>
+    </div>
+
+    <!-- 编辑账号弹窗 -->
+    <div id="editAccountModal" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);z-index:9999;align-items:center;justify-content:center">
+      <div class="card" style="width:500px;max-height:90vh;overflow-y:auto;margin:0">
+        <h3 style="margin-bottom:16px">编辑账号 <span id="editAccUsername" style="color:#1a73e8;font-size:14px"></span></h3>
+        <input type="hidden" id="editAccId">
+        <div class="form-row">
+          <div class="form-group"><label>IG 密码</label><input id="editAccPassword" type="password" placeholder="留空则不修改"></div>
+          <div class="form-group"><label>2FA 密钥（Base32）</label><input id="editAccTwofa" placeholder="留空则不自动验证"></div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>IG Cookies</label>
+          <textarea id="editAccCookies" rows="3" placeholder="留空则不修改" style="width:100%;padding:8px 10px;border:1px solid #dadce0;border-radius:4px;font-size:12px;resize:vertical;font-family:monospace"></textarea>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>代理类型</label>
+            <select id="editAccProxyType" style="width:100%;padding:8px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px">
+              <option value="http">HTTP / HTTPS</option>
+              <option value="socks5">Socks5</option>
+            </select>
+          </div>
+          <div class="form-group"><label>代理 IP</label><input id="editAccProxyHost" placeholder="127.0.0.1"></div>
+          <div class="form-group"><label>代理端口</label><input id="editAccProxyPort" placeholder="8080"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>代理账号</label><input id="editAccProxyUser" placeholder="可选"></div>
+          <div class="form-group"><label>代理密码</label><input id="editAccProxyPass" type="password" placeholder="可选"></div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:16px">
+          <button class="btn btn-primary" style="flex:1" onclick="saveEditAccount()">保存</button>
+          <button class="btn btn-gray" style="flex:1" onclick="closeEditAccount()">取消</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>账号列表
+        <button class="btn btn-sm btn-gray" style="float:right" onclick="loadAccounts()">刷新</button>
+      </h3>
+      <div id="accountsCards" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px">
+        <div style="grid-column:1/-1;text-align:center;color:#9aa0a6;padding:32px">暂无账号，请先添加</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 智能养号 -->
+  <div class="page" id="page-warmup">
+    <div class="status-banner stopped" id="warmupBanner">
+      <div>
+        <span class="pulse"></span>
+        <span class="status-text" id="warmupStatusText">养号未启动</span>
+        <span id="warmupCurrent" style="margin-left:14px;font-size:13px;color:#5f6368"></span>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-success" id="btnWarmupStart" onclick="startBatchWarmup()">批次启动</button>
+        <button class="btn btn-warning" id="btnWarmupPause" onclick="pauseWarmup()" style="display:none">暂停</button>
+        <button class="btn btn-gray" id="btnWarmupResume" onclick="resumeWarmup()" style="display:none">恢复</button>
+        <button class="btn btn-danger" id="btnWarmupStop" onclick="stopWarmup()" style="display:none">停止</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat-card"><div class="label">账号总数</div><div class="value" id="wAccTotal">0</div></div>
+      <div class="stat-card"><div class="label">今日已养号</div><div class="value" id="wAccToday" style="color:#1e8e3e">0</div></div>
+      <div class="stat-card"><div class="label">平均健康度</div><div class="value" id="wAvgHealth" style="color:#1a73e8">0</div></div>
+      <div class="stat-card"><div class="label">平均养号天数</div><div class="value" id="wAvgDays" style="color:#f9ab00">0</div></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:16px">
+      <div>
+        <div class="card">
+          <h3>养号策略模式</h3>
+          <div class="mode-cards">
+            <label class="mode-card selected" id="modeAuto" onclick="selectWarmupMode('auto')">
+              <input type="radio" name="warmupMode" value="auto" checked style="display:none">
+              <div class="mode-title">自动计划</div>
+              <div class="mode-desc">按养号天数自动适配</div>
+            </label>
+            <label class="mode-card" id="modeConservative" onclick="selectWarmupMode('conservative')">
+              <input type="radio" name="warmupMode" value="conservative" style="display:none">
+              <div class="mode-title">保守模式</div>
+              <div class="mode-desc">仅浏览 · 5 分钟</div>
+            </label>
+            <label class="mode-card" id="modeStandard" onclick="selectWarmupMode('standard')">
+              <input type="radio" name="warmupMode" value="standard" style="display:none">
+              <div class="mode-title">标准模式</div>
+              <div class="mode-desc">浏览 + 点赞 · 15 分钟</div>
+            </label>
+          </div>
+          <div id="customWarmupParams" style="display:none">
+            <div class="form-row">
+              <div class="form-group"><label>时长（分钟）</label><input type="number" id="custDuration" value="15"></div>
+              <div class="form-group"><label>点赞概率</label><input type="number" id="custLikeProb" value="0.2" step="0.05" min="0" max="1"></div>
+              <div class="form-group"><label>最多点赞</label><input type="number" id="custMaxLikes" value="5"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label>Story 数量</label><input type="number" id="custStories" value="3"></div>
+              <div class="form-group"><label>停顿间隔（分）</label><input type="number" id="custPauseInt" value="3"></div>
+              <div class="form-group"><label>停顿时长（秒）</label><input type="number" id="custPauseDur" value="30"></div>
+            </div>
+            <div class="form-row">
+              <div class="form-group"><label><input type="checkbox" id="custEnableLike" checked style="accent-color:#1a73e8"> 启用点赞</label></div>
+              <div class="form-group"><label><input type="checkbox" id="custEnableStory" checked style="accent-color:#1a73e8"> 观看 Story</label></div>
+              <div class="form-group"><label><input type="checkbox" id="custEnableExplore" checked style="accent-color:#1a73e8"> 浏览探索页</label></div>
+            </div>
+          </div>
+          <p id="warmupModeDesc" style="font-size:12px;color:#1a73e8;margin-top:8px">根据账号养号天数自动选择策略（Day 1-3 保守 / 4-7 标准 / 8+ 活跃）</p>
+        </div>
+
+        <div class="card">
+          <h3>养号地区偏好</h3>
+          <div class="form-group">
+            <label>选择养号内容地区</label>
+            <select id="warmupRegion">
+              <option value="random">随机国家（每次随机切换）</option>
+              <option value="HK">中国香港</option>
+              <option value="TW">中国台湾</option>
+              <option value="CN">中国大陆</option>
+              <option value="JP">日本</option>
+              <option value="KR">韩国</option>
+              <option value="US">美国</option>
+              <option value="GB">英国</option>
+              <option value="FR">法国</option>
+              <option value="DE">德国</option>
+              <option value="IT">意大利</option>
+              <option value="ES">西班牙</option>
+              <option value="AU">澳大利亚</option>
+              <option value="CA">加拿大</option>
+              <option value="SG">新加坡</option>
+              <option value="MY">马来西亚</option>
+              <option value="TH">泰国</option>
+              <option value="VN">越南</option>
+              <option value="ID">印度尼西亚</option>
+              <option value="PH">菲律宾</option>
+              <option value="IN">印度</option>
+              <option value="AE">阿联酋</option>
+              <option value="BR">巴西</option>
+              <option value="MX">墨西哥</option>
+              <option value="RU">俄罗斯</option>
+              <option value="NL">荷兰</option>
+              <option value="SE">瑞典</option>
+              <option value="CH">瑞士</option>
+              <option value="PT">葡萄牙</option>
+              <option value="AT">奥地利</option>
+              <option value="BE">比利时</option>
+              <option value="NZ">新西兰</option>
+            </select>
+          </div>
+          <p style="font-size:11px;color:#9aa0a6;margin-top:6px">养号时自动浏览该地区的热门标签，强化账号地区属性。建议与代理 IP 国家一致。</p>
+          <p style="font-size:11px;color:#1a73e8;margin-top:4px">提示：每个账号配置对应国家的代理 IP，IG 会根据 IP 地理位置推荐当地内容</p>
+          <button class="btn btn-primary btn-sm" onclick="applyRegionToAll()">应用到所有账号</button>
+        </div>
+
+        <div class="card">
+          <h3>定时养号</h3>
+          <div class="form-row">
+            <div class="form-group"><label>每日时间</label><input type="time" id="scheduleTime" value="09:00"></div>
+            <div class="form-group"><label>时长（分钟）</label><input type="number" id="scheduleDuration" value="15"></div>
+            <div style="display:flex;align-items:flex-end;gap:8px">
+              <button class="btn btn-primary btn-sm" onclick="setSchedule()">设置</button>
+              <button class="btn btn-gray btn-sm" onclick="clearSchedule()">取消</button>
+            </div>
+          </div>
+          <p style="font-size:11px;color:#9aa0a6;margin-top:6px">设置后每天固定时间自动后台启动养号（需保持软件打开）</p>
+        </div>
+
+        <div class="card">
+          <h3>单账号养号</h3>
+          <div class="form-row">
+            <div class="form-group" style="flex:2"><label>选择账号</label><select id="singleWarmupAccount"><option value="">请选择账号</option></select></div>
+            <div style="display:flex;align-items:flex-end"><button class="btn btn-primary btn-sm" onclick="startSingleWarmup()">开始养号</button></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>账号健康度列表</h3>
+          <table>
+            <thead><tr><th>账号</th><th>养号天数</th><th>今日状态</th><th>健康度</th><th>安全等级</th><th>当前计划</th></tr></thead>
+            <tbody id="warmupAccountList"><tr><td colspan="6" style="text-align:center;color:#9aa0a6;padding:16px">暂无账号</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>实时养号日志</h3>
+          <div class="log-box" id="warmupLogBox" style="height:260px"><div class="log-info">[系统] 等待养号任务启动...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 群发系统 -->
+  <div class="page" id="page-massdm">
+    <div style="display:grid;grid-template-columns:1fr 1.2fr;gap:16px">
+      <div>
+        <div class="card">
+          <h3>话术模板（支持 Spin-Text）</h3>
+          <div style="margin-bottom:10px">
+            <textarea id="tplContent" rows="3" style="width:100%;padding:8px 12px;border:1px solid #dadce0;border-radius:4px;font-size:13px;resize:vertical;font-family:inherit" placeholder="{你好|嗨|哈囉} {username}，很高兴认识你！{欢迎|期待}交流~"></textarea>
+            <p style="font-size:11px;color:#9aa0a6;margin-top:6px">语法：{选项1|选项2|选项3} 随机选一个；{username} 替换为目标用户名</p>
+          </div>
+          <!-- 图片上传区域 -->
+          <div style="margin-bottom:10px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+              <button class="btn btn-gray btn-sm" onclick="document.getElementById('tplImageInput').click()">添加图片</button>
+              <span id="tplImageCount" style="font-size:12px;color:#5f6368">未添加图片</span>
+              <input type="file" id="tplImageInput" accept="image/*" multiple style="display:none" onchange="handleTemplateImages(this.files)">
+            </div>
+            <div id="tplImagePreview" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="addTemplate()">添加话术</button>
+          <div id="templateList" style="margin-top:12px"></div>
+        </div>
+
+        <div class="card">
+          <h3>发送账号（多选）</h3>
+          <div id="accountCheckboxes" style="max-height:160px;overflow-y:auto">加载中...</div>
+        </div>
+
+        <div class="card">
+          <h3>防重规则</h3>
+          <div style="display:flex;gap:16px;flex-wrap:wrap">
+            <label style="font-size:13px;cursor:pointer"><input type="radio" name="dedupRule" value="never" checked style="accent-color:#1a73e8"> 永久不重发</label>
+            <label style="font-size:13px;cursor:pointer"><input type="radio" name="dedupRule" value="7d" style="accent-color:#1a73e8"> 7 天冷却</label>
+            <label style="font-size:13px;cursor:pointer"><input type="radio" name="dedupRule" value="10d" style="accent-color:#1a73e8"> 10 天冷却</label>
+            <label style="font-size:13px;cursor:pointer"><input type="radio" name="dedupRule" value="off" style="accent-color:#1a73e8"> 关闭防重</label>
+          </div>
+          <p style="font-size:11px;color:#9aa0a6;margin-top:10px">每账号每日上限：<strong style="color:#1a73e8">20 条</strong>私信</p>
+        </div>
+
+        <div class="card">
+          <h3>目标名单</h3>
+          <div class="mini-stats">
+            <div class="mini-stat"><div class="num" id="leadTotal">0</div><div class="lbl">总数</div></div>
+            <div class="mini-stat"><div class="num" id="leadPending" style="color:#1a73e8">0</div><div class="lbl">待发</div></div>
+            <div class="mini-stat"><div class="num" id="leadSent" style="color:#1e8e3e">0</div><div class="lbl">已发</div></div>
+            <div class="mini-stat"><div class="num" id="leadFailed" style="color:#d93025">0</div><div class="lbl">失败</div></div>
+          </div>
+          <textarea id="leadsImport" rows="3" style="width:100%;padding:8px 12px;border:1px solid #dadce0;border-radius:4px;font-size:12px;resize:vertical;font-family:inherit" placeholder="每行一个用户名，批量导入..."></textarea>
+          <div style="margin-top:10px;display:flex;gap:8px">
+            <button class="btn btn-primary btn-sm" onclick="importLeads()">批量导入</button>
+            <button class="btn btn-gray btn-sm" onclick="clearLeads()">清空名单</button>
+            <button class="btn btn-gray btn-sm" onclick="refreshLeadsStats()">刷新</button>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="card">
+          <h3>实时控制台</h3>
+          <div style="display:flex;gap:8px;margin-bottom:16px">
+            <button class="btn btn-success" id="btnDMStart" onclick="startMassDM()">开始群发</button>
+            <button class="btn btn-warning" id="btnDMPause" onclick="pauseMassDM()" style="display:none">暂停</button>
+            <button class="btn btn-gray" id="btnDMResume" onclick="resumeMassDM()" style="display:none">恢复</button>
+            <button class="btn btn-danger" id="btnDMStop" onclick="stopMassDM()" style="display:none">停止</button>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:24px">
+            <div class="ring-container">
+              <svg width="90" height="90" viewBox="0 0 90 90">
+                <circle class="ring-bg" cx="45" cy="45" r="38"/>
+                <circle id="progressRing" class="ring-fill" cx="45" cy="45" r="38" stroke-dasharray="239" stroke-dashoffset="239"/>
+              </svg>
+              <div class="ring-text"><div class="pct" id="progressPct">0%</div><div class="lbl">进度</div></div>
+            </div>
+            <div style="flex:1">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:#1e8e3e">成功</span><span id="statSuccess" style="font-weight:600">0</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:#d93025">失败</span><span id="statFailed" style="font-weight:600">0</span></div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;color:#f9ab00">跳过</span><span id="statSkipped" style="font-weight:600">0</span></div>
+              <div style="display:flex;justify-content:space-between"><span style="font-size:13px;color:#5f6368">总计</span><span id="statTotal" style="font-weight:600">0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>各账号发送统计</h3>
+          <table>
+            <thead><tr><th>账号</th><th>当前目标</th><th>成功</th><th>失败</th><th>跳过</th><th>进度</th></tr></thead>
+            <tbody id="dmAccountStats"><tr><td colspan="6" style="text-align:center;color:#9aa0a6;padding:16px">未开始</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3>实时运行日志</h3>
+          <div class="log-box" id="dmLogBox" style="height:280px"><div class="log-info">[系统] 等待群发任务启动...</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 获客采集 -->
+  <div class="page" id="page-scraper">
+    <div style="display:grid;grid-template-columns:1fr 1.3fr;gap:16px">
+      <!-- 左侧配置栏 -->
+      <div>
+        <div class="card">
+          <h3>采集配置</h3>
+          <div class="form-group" style="margin-bottom:14px">
+            <label>执行采集的 IG 账号</label>
+            <select id="scrapeAccount"><option value="">请选择账号</option></select>
+          </div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label>目标主页 Username</label>
+            <input id="scrapeTarget" placeholder="例如：nike">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>采集类型</label>
+              <select id="scrapeType">
+                <option value="followers">粉丝列表</option>
+                <option value="following">关注列表</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>上限数量</label>
+              <input type="number" id="scrapeMax" value="500" min="10" max="5000">
+            </div>
+          </div>
+          <div class="form-group" style="margin-bottom:14px">
+            <label><input type="checkbox" id="scrapeAutoSave" checked style="accent-color:#1a73e8"> 采集完成后自动写入数据库（去重）</label>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-success" id="btnScrapeStart" onclick="startExtraction()">开始采集</button>
+            <button class="btn btn-danger" id="btnScrapeStop" onclick="stopExtraction()" style="display:none">停止采集</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>采集说明</h3>
+          <div style="font-size:12px;color:#5f6368;line-height:1.8">
+            <p>1. 选择一个已登录的 IG 账号执行采集</p>
+            <p>2. 输入目标主页用户名，选择采集粉丝或关注</p>
+            <p>3. 系统自动滚动加载，模拟真人操作节奏</p>
+            <p>4. 自动过滤私密账号与无头像异常账号</p>
+            <p>5. 写入数据库时自动比对历史记录，绝不重复</p>
+            <p style="color:#d93025;margin-top:8px">注意：采集过程 headless 静默运行，请勿关闭软件</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 右侧进度栏 -->
+      <div>
+        <div class="card">
+          <h3>采集进度</h3>
+          <div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span style="font-size:13px;color:#5f6368" id="scrapeStatusText">等待开始</span>
+              <span style="font-size:13px;font-weight:600" id="scrapeCountText">0 / 0</span>
+            </div>
+            <div class="progress-bar" style="height:10px">
+              <div class="progress-fill" id="scrapeProgressBar" style="width:0%"></div>
+            </div>
+          </div>
+          <div class="mini-stats">
+            <div class="mini-stat"><div class="num" id="scrapeCollected">0</div><div class="lbl">已采集</div></div>
+            <div class="mini-stat"><div class="num" id="scrapeSaved" style="color:#1e8e3e">0</div><div class="lbl">已入库</div></div>
+            <div class="mini-stat"><div class="num" id="scrapeSkipped" style="color:#f9ab00">0</div><div class="lbl">去重跳过</div></div>
+            <div class="mini-stat"><div class="num" id="scrapeTargetNum" style="color:#1a73e8">0</div><div class="lbl">目标数</div></div>
+          </div>
+          <div id="scrapeGoDM" style="display:none;margin-top:14px;text-align:center">
+            <button class="btn btn-success" onclick="goToMassDM()">去群发 →</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>采集结果预览
+            <button class="btn btn-sm btn-primary" style="float:right" onclick="exportScrapeCSV()">导出 CSV</button>
+          </h3>
+          <div style="max-height:340px;overflow-y:auto">
+            <table>
+              <thead><tr><th>#</th><th>用户名</th><th>全名</th><th>来源</th></tr></thead>
+              <tbody id="scrapePreview"><tr><td colspan="4" style="text-align:center;color:#9aa0a6;padding:24px">暂无采集数据</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 自动回复 -->
+  <div class="page" id="page-autoreply">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div>
+        <!-- 控制区 -->
+        <div class="card">
+          <h3>自动回复控制</h3>
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+            <button class="btn btn-success" id="btnARStart" onclick="startAutoReply()">启动监听</button>
+            <button class="btn btn-danger" id="btnARStop" onclick="stopAutoReply()" style="display:none">停止监听</button>
+            <button class="btn btn-gray btn-sm" onclick="triggerAutoReplyScan()">立即扫描一次</button>
+            <span id="arStatusText" style="font-size:13px;color:#9aa0a6">未启动</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <label style="font-size:13px">轮询间隔：</label>
+            <select id="arInterval" style="padding:6px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px">
+              <option value="3">3 分钟</option>
+              <option value="5" selected>5 分钟</option>
+              <option value="10">10 分钟</option>
+              <option value="15">15 分钟</option>
+              <option value="30">30 分钟</option>
+            </select>
+            <span style="font-size:11px;color:#9aa0a6">群发运行时自动回复会暂停错开</span>
+          </div>
+        </div>
+
+        <!-- 关键字规则管理 -->
+        <div class="card">
+          <h3>关键字规则</h3>
+          <div style="margin-bottom:12px">
+            <div style="display:flex;gap:8px;margin-bottom:8px">
+              <input id="arKeyword" placeholder="关键字" style="flex:1;padding:8px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px">
+              <select id="arMatchType" style="padding:8px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px">
+                <option value="contains">包含匹配</option>
+                <option value="exact">精准匹配</option>
+                <option value="default_fallback">兜底回复</option>
+              </select>
+            </div>
+            <textarea id="arReplyContent" rows="2" placeholder="回复内容，多套用 ||| 分隔随机轮换" style="width:100%;padding:8px 10px;border:1px solid #dadce0;border-radius:4px;font-size:13px;resize:vertical;font-family:inherit"></textarea>
+            <button class="btn btn-primary btn-sm" style="margin-top:8px" onclick="addAutoReplyRule()">添加规则</button>
+          </div>
+          <div id="arRuleList" style="max-height:280px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <div>
+        <!-- 账号开关 -->
+        <div class="card">
+          <h3>监听账号</h3>
+          <div id="arAccountList" style="max-height:160px;overflow-y:auto">加载中...</div>
+        </div>
+
+        <!-- 实时日志 -->
+        <div class="card">
+          <h3>自动回复日志
+            <button class="btn btn-sm btn-gray" style="float:right" onclick="loadAutoReplyLogs()">刷新</button>
+          </h3>
+          <div id="arLogBox" class="log-box" style="height:340px;font-size:12px">
+            <div class="log-info">[系统] 等待自动回复任务启动...</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置 -->
+  <div class="page" id="page-settings">
+    <div class="card" style="background:linear-gradient(135deg,#1a1a2e,#16213e);border:none">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div>
+          <h3 style="color:#fff;margin:0 0 6px 0">会员中心</h3>
+          <div style="font-size:13px;color:#8b8b9e" id="settingsLicenseStatus">加载中...</div>
+          <div style="font-size:11px;color:#6b6b7e;margin-top:4px" id="settingsUserEmail">未登录</div>
+          <div style="font-size:11px;color:#6b6b7e;margin-top:2px" id="settingsLicenseMachine">机器码: ----</div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="openLicenseModal()" style="background:linear-gradient(135deg,#7c3aed,#2563eb);border:none">管理会员</button>
+          <button class="btn btn-sm btn-gray" onclick="logout()" style="background:rgba(255,255,255,0.1);color:#fff;border:none">退出登录</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>智能养号参数</h3>
+      <div class="form-row">
+        <div class="form-group"><label>自动养号间隔（分钟）</label><input type="number" id="setInterval" value="30"></div>
+        <div class="form-group"><label>每次刷 Feed 滚动次数</label><input type="number" id="setFeedScroll" value="15"></div>
+        <div class="form-group"><label>点赞概率（0-1）</label><input type="number" id="setLikeProb" value="0.25" step="0.05" min="0" max="1"></div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>每次看 Story 数量</label><input type="number" id="setStoryCount" value="8"></div>
+        <div class="form-group"><label>最少停留（毫秒）</label><input type="number" id="setMinStay" value="2000"></div>
+        <div class="form-group"><label>最多停留（毫秒）</label><input type="number" id="setMaxStay" value="5000"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+    </div>
+
+    <div class="card">
+      <h3>默认代理配置</h3>
+      <div class="form-row">
+        <div class="form-group"><label>默认代理 IP</label><input id="setProxyHost" placeholder="127.0.0.1"></div>
+        <div class="form-group"><label>默认代理端口</label><input id="setProxyPort" placeholder="8080"></div>
+        <div class="form-group"><label>默认代理账号</label><input id="setProxyUser" placeholder="可选"></div>
+        <div class="form-group"><label>默认代理密码</label><input id="setProxyPass" type="password" placeholder="可选"></div>
+      </div>
+      <button class="btn btn-primary" onclick="saveSettings()">保存设置</button>
+    </div>
+
+    <div class="card">
+      <h3 data-i18n="settings.language">语言 / Language</h3>
+      <div class="form-row">
+        <select id="setLanguage" onchange="switchLanguage(this.value)" style="padding:8px 12px;border:1px solid #dadce0;border-radius:4px;font-size:14px">
+          <option value="zh_CN">简体中文</option>
+          <option value="en_US">English</option>
+        </select>
+        <span style="font-size:12px;color:#9aa0a6;margin-left:8px">切换后界面立即刷新生效</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>架构信息</h3>
+      <div style="font-size:13px;color:#3c4043;line-height:2.2">
+        <p><strong>驱动层：</strong><code>src/ig-driver/</code> — browser.js, login.js, feed.js, story.js, dm.js, warmup.js, selectors.js</p>
+        <p><strong>业务层：</strong><code>src/core/</code> — db.js, warmup.js, warmup-scheduler.js, task-scheduler.js, dm-dispatcher.js</p>
+        <p><strong>主进程：</strong>main.js — IPC 调度，双层解耦</p>
+        <p><strong>数据存储：</strong>本地 JSON 文件，无云端同步</p>
+        <p><strong>运行模式：</strong>所有自动化任务默认 headless 静默运行</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const { ipcRenderer } = require('electron');
+require('./src/i18n.js');
+
+// 标签页切换
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('page-' + tab.dataset.page).classList.add('active');
+    if (tab.dataset.page === 'dashboard') loadDashboard();
+    if (tab.dataset.page === 'accounts') loadAccounts();
+    if (tab.dataset.page === 'warmup') loadWarmupAccounts();
+    if (tab.dataset.page === 'massdm') loadMassDMPage();
+    if (tab.dataset.page === 'scraper') loadScraperPage();
+    if (tab.dataset.page === 'autoreply') loadAutoReplyPage();
+    if (tab.dataset.page === 'settings') loadSettings();
+  });
+});
+
+// ========== 用户认证（登录/注册） ==========
+let authMode = 'login'; // login | register
+
+function authToggle() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  const title = document.getElementById('authTitle');
+  const subtitle = document.getElementById('authSubtitle');
+  const btn = document.getElementById('authSubmitBtn');
+  const switchText = document.getElementById('authSwitchText');
+  const switchLink = document.getElementById('authSwitchLink');
+
+  if (authMode === 'login') {
+    title.textContent = '登录智连 IG';
+    subtitle.textContent = '登录后享受7天免费试用';
+    btn.textContent = '登录';
+    switchText.textContent = '还没有账号？';
+    switchLink.textContent = '立即注册';
+  } else {
+    title.textContent = '注册智连 IG';
+    subtitle.textContent = '注册即送7天免费试用';
+    btn.textContent = '注册';
+    switchText.textContent = '已有账号？';
+    switchLink.textContent = '立即登录';
+  }
+  document.getElementById('authError').style.display = 'none';
+}
+
+async function authSubmit() {
+  const email = document.getElementById('authEmail').value.trim();
+  const password = document.getElementById('authPassword').value;
+  const errorEl = document.getElementById('authError');
+  const btn = document.getElementById('authSubmitBtn');
+
+  if (!email) { showAuthError('请输入邮箱'); return; }
+  if (!password || password.length < 6) { showAuthError('密码至少6位'); return; }
+
+  btn.disabled = true;
+  btn.textContent = authMode === 'login' ? '登录中...' : '注册中...';
+  errorEl.style.display = 'none';
+
+  try {
+    const method = authMode === 'login' ? 'auth:login' : 'auth:register';
+    const res = await ipcRenderer.invoke(method, email, password);
+
+    if (res.success) {
+      // 登录/注册成功，隐藏登录页
+      document.getElementById('authPage').style.display = 'none';
+      // 刷新仪表盘
+      loadDashboard();
+    } else {
+      showAuthError(res.error || '操作失败，请重试');
+    }
+  } catch (e) {
+    showAuthError('网络错误，请检查网络连接');
+  }
+
+  btn.disabled = false;
+  btn.textContent = authMode === 'login' ? '登录' : '注册';
+}
+
+function showAuthError(msg) {
+  const el = document.getElementById('authError');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+async function checkAuthStatus() {
+  try {
+    const res = await ipcRenderer.invoke('auth:status');
+    if (res.loggedIn) {
+      document.getElementById('authPage').style.display = 'none';
+    } else {
+      document.getElementById('authPage').style.display = 'flex';
+    }
+  } catch (e) {
+    document.getElementById('authPage').style.display = 'flex';
+  }
+}
+
+async function logout() {
+  if (!confirm('确定要退出登录吗？')) return;
+  await ipcRenderer.invoke('auth:logout');
+  document.getElementById('authPage').style.display = 'flex';
+  authMode = 'login';
+  document.getElementById('authTitle').textContent = '登录智连 IG';
+  document.getElementById('authSubtitle').textContent = '登录后享受7天免费试用';
+  document.getElementById('authSubmitBtn').textContent = '登录';
+  document.getElementById('authSwitchText').textContent = '还没有账号？';
+  document.getElementById('authSwitchLink').textContent = '立即注册';
+  document.getElementById('authEmail').value = '';
+  document.getElementById('authPassword').value = '';
+  document.getElementById('authError').style.display = 'none';
+}
+
+// 语言切换
+function switchLanguage(lang) {
+  if (window.i18n && window.i18n.setLang(lang)) {
+    window.i18n.applyI18n();
+    document.title = lang === 'zh_CN' ? '智连 IG' : 'DirectFlow IG';
+    // 通知主进程更新窗口标题
+    ipcRenderer.invoke('set-window-title', document.title);
+  }
+}
+
+// ========== 会员授权系统 ==========
+let selectedPlan = 'vip';
+let currentLicenseStatus = null;
+
+async function loadLicenseStatus() {
+  const res = await ipcRenderer.invoke('license:getStatus');
+  if (res.success) {
+    currentLicenseStatus = res;
+    updateLicenseUI(res);
+  }
+  return res;
+}
+
+function updateLicenseUI(status) {
+  const statusMap = { trial: '免费试用', trial_expired: '试用已结束', active: '已激活', expired: '已过期' };
+  document.getElementById('licensePlanText').textContent = statusMap[status.status] || status.status;
+  document.getElementById('licenseMachineCode').textContent = status.machineCode || '----';
+  const trialRow = document.getElementById('licenseTrialRow');
+  const expireRow = document.getElementById('licenseExpireRow');
+  if (status.status === 'trial') {
+    trialRow.style.display = 'flex';
+    expireRow.style.display = 'none';
+    document.getElementById('licenseTrialDays').textContent = status.trialDaysLeft + ' 天';
+  } else if (status.status === 'active' && status.expiresAt) {
+    trialRow.style.display = 'none';
+    expireRow.style.display = 'flex';
+    document.getElementById('licenseExpireDate').textContent = new Date(status.expiresAt).toLocaleDateString();
+  } else {
+    trialRow.style.display = 'none';
+    expireRow.style.display = 'none';
+  }
+  const title = document.getElementById('licenseModalTitle');
+  const subtitle = document.getElementById('licenseModalSubtitle');
+  const upgradeBtn = document.getElementById('licenseUpgradeBtn');
+  if (status.status === 'active') {
+    title.textContent = '智连 IG 会员';
+    subtitle.textContent = '已激活 · ' + (status.maxAccounts || 0) + ' 个账号';
+    upgradeBtn.textContent = '续费 / 升级';
+  } else if (status.status === 'trial_expired' || status.status === 'expired') {
+    title.textContent = '试用已结束';
+    subtitle.textContent = '升级后解锁全部功能';
+    upgradeBtn.textContent = '立即升级';
+  } else {
+    title.textContent = '智连 IG Pro';
+    subtitle.textContent = '免费试用中，升级解锁全部功能';
+    upgradeBtn.textContent = '升级 Pro';
+  }
+}
+
+function openLicenseModal() {
+  loadLicenseStatus();
+  document.getElementById('licenseModal').style.display = 'flex';
+  selectPlan(selectedPlan);
+}
+
+function closeLicenseModal() {
+  document.getElementById('licenseModal').style.display = 'none';
+  document.getElementById('licenseLoading').style.display = 'none';
+}
+
+function selectPlan(plan) {
+  selectedPlan = plan;
+  document.querySelectorAll('.license-plan-card').forEach(card => {
+    card.classList.toggle('selected', card.dataset.plan === plan);
+  });
+  const planNames = { basic: '基础版', vip: 'VIP版', pro: 'Pro版' };
+  document.getElementById('licenseUpgradeBtn').textContent = '升级 ' + (planNames[plan] || 'Pro');
+}
+
+async function openCheckout() {
+  document.getElementById('licenseLoading').style.display = 'block';
+  document.getElementById('licenseTip').textContent = '正在打开支付页面...';
+  await ipcRenderer.invoke('license:openCheckout', selectedPlan);
+  document.getElementById('licenseTip').textContent = '已在浏览器中打开支付页面，完成支付后自动激活';
+}
+
+ipcRenderer.on('LICENSE_LOCK', (event, data) => {
+  openLicenseModal();
+});
+
+ipcRenderer.on('license-updated', (event, status) => {
+  currentLicenseStatus = status;
+  updateLicenseUI(status);
+  document.getElementById('licenseLoading').style.display = 'none';
+  document.getElementById('licenseTip').textContent = '授权成功！已解锁全部功能';
+  setTimeout(() => closeLicenseModal(), 1500);
+});
+
+// 初始化
+window.addEventListener('DOMContentLoaded', async () => {
+  // 检查登录状态
+  await checkAuthStatus();
+  // 根据系统语言设置窗口标题
+  document.title = navigator.language.startsWith('zh') ? '智连 IG' : 'DirectFlow IG';
+  // 应用国际化
+  if (window.i18n) {
+    window.i18n.applyI18n();
+    // 设置语言下拉当前值
+    const langSelect = document.getElementById('setLanguage');
+    if (langSelect) langSelect.value = window.i18n.getLang();
+  }
+  loadDashboard();
+  setInterval(async () => {
+    const res = await ipcRenderer.invoke('warmup-status');
+    if (res.running) updateWarmupUI(res);
+  }, 3000);
+});
+
+// 仪表盘
+async function loadDashboard() {
+  const accRes = await ipcRenderer.invoke('account-list');
+  const accounts = accRes.accounts || [];
+  document.getElementById('statAccounts').textContent = accounts.length;
+  document.getElementById('statActive').textContent = accounts.filter(a => a.status === 'active').length;
+  document.getElementById('statLikes').textContent = accounts.reduce((s,a) => s + (a.totalLikes||0), 0);
+  const avgLevel = accounts.length ? Math.round(accounts.reduce((s,a) => s + (a.warmupLevel||0), 0) / accounts.length) : 0;
+  document.getElementById('statLevel').textContent = avgLevel;
+
+  const logRes = await ipcRenderer.invoke('warmup-logs');
+  const logs = logRes.logs || [];
+  if (logs.length === 0) {
+    document.getElementById('recentLogsTable').innerHTML = '<div style="text-align:center;color:#9aa0a6;padding:24px">暂无养号记录</div>';
+  } else {
+    document.getElementById('recentLogsTable').innerHTML = '<table><thead><tr><th>时间</th><th>账号</th><th>消息</th><th>类型</th></tr></thead><tbody>' +
+      logs.slice(0,10).map(l => `<tr><td style="font-size:12px;color:#5f6368">${new Date(l.time).toLocaleString()}</td><td>${l.account||'-'}</td><td>${l.msg}</td><td><span class="status status-${l.type==='error'?'error':l.type==='warn'?'warming':'active'}">${l.type}</span></td></tr>`).join('') +
+      '</tbody></table>';
+  }
+}
+
+// 账号管理
+async function addAccount() {
+  const account = {
+    username: document.getElementById('accUsername').value.trim(),
+    password: document.getElementById('accPassword').value,
+    twofaSecret: document.getElementById('accTwofa').value.trim(),
+    proxyType: document.getElementById('accProxyType').value,
+    proxyHost: document.getElementById('accProxyHost').value.trim(),
+    proxyPort: document.getElementById('accProxyPort').value.trim(),
+    proxyUser: document.getElementById('accProxyUser').value.trim(),
+    proxyPass: document.getElementById('accProxyPass').value,
+    cookies: document.getElementById('accCookies').value.trim(),
+    enabled: true,
+  };
+  if (!account.username) { alert('请输入 IG 用户名'); return; }
+  await ipcRenderer.invoke('account-add', account);
+  alert('账号添加成功');
+  ['accUsername','accPassword','accTwofa','accProxyHost','accProxyPort','accProxyUser','accProxyPass','accCookies'].forEach(id => document.getElementById(id).value = '');
+  loadAccounts();
+  loadDashboard();
+}
+
+async function loadAccounts() {
+  const accRes = await ipcRenderer.invoke('account-list');
+  const accounts = accRes.accounts || [];
+  const instRes = await ipcRenderer.invoke('browser-list');
+  const instances = instRes.instances || [];
+  const container = document.getElementById('accountsCards');
+
+  if (accounts.length === 0) {
+    container.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9aa0a6;padding:32px">暂无账号，请先添加</div>';
+    return;
+  }
+
+  container.innerHTML = accounts.map(a => {
+    // 查找该账号对应的运行中实例
+    const inst = instances.find(i => i.accountId === a.id || i.accountId === 'acc_' + a.id);
+    const isRunning = !!inst;
+    const health = a.health_score || 50;
+    const healthColor = health >= 80 ? '#1e8e3e' : health >= 60 ? '#1a73e8' : health >= 40 ? '#f9ab00' : '#d93025';
+
+    return `
+    <div class="account-card" style="border:1px solid #e8eaed;border-radius:8px;padding:16px;background:#fff">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#1a73e8,#4285f4);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;font-size:16px">${a.username.charAt(0).toUpperCase()}</div>
+          <div>
+            <div style="font-weight:600;font-size:15px">${a.username}</div>
+            <div style="font-size:12px;color:${a.twofaSecret ? '#1e8e3e' : '#9aa0a6'}">${a.twofaSecret ? '2FA 自动验证已配置' : '未配置 2FA 自动验证'}</div>
+            <div style="font-size:11px;color:${a.cookies ? '#1e8e3e' : '#f9ab00'}">${a.cookies ? 'Cookies 已注入' : '未配置 Cookies（新号建议填写）'}</div>
+          </div>
+        </div>
+        <span class="status status-${isRunning ? 'active' : 'inactive'}">${isRunning ? '运行中' : '未启动'}</span>
+      </div>
+
+      <div style="font-size:12px;color:#5f6368;line-height:1.8;margin-bottom:12px">
+        <div>代理：${a.proxyHost ? a.proxyHost + ':' + a.proxyPort : '直连'}</div>
+        <div>养号：${a.warmup_days || 0} 天 · 健康度 <span style="color:${healthColor};font-weight:600">${health}</span></div>
+        <div>指纹：${a.fingerprint ? a.fingerprint.viewport.width + 'x' + a.fingerprint.viewport.height + ' · ' + a.fingerprint.timezone + ' · ' + a.fingerprint.language : '<span style="color:#d93025">未生成</span>'}</div>
+        ${isRunning ? `<div>运行时长：${Math.floor(inst.uptime/60)}分${inst.uptime%60}秒</div>` : ''}
+      </div>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${isRunning ? `
+          <button class="btn btn-sm btn-danger" onclick="closeAccountBrowser('${a.id}')">关闭浏览器</button>
+          <button class="btn btn-sm btn-primary" onclick="openIGInBrowser('${a.id}')">打开 IG</button>
+          <button class="btn btn-sm btn-gray" onclick="refreshBrowser('${a.id}')">刷新</button>
+          <button class="btn btn-sm btn-success" onclick="loginAccount('${a.id}')">登录</button>
+        ` : `
+          <button class="btn btn-sm btn-primary" onclick="launchAccountBrowser('${a.id}')">启动浏览器</button>
+        `}
+        <button class="btn btn-sm btn-gray" onclick="editAccount('${a.id}')">编辑</button>
+        <button class="btn btn-sm btn-gray" onclick="regenerateFingerprint('${a.id}')" title="重新生成浏览器指纹">换指纹</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteAccount('${a.id}')">删除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function statusText(s) {
+  const map = {active:'正常',inactive:'未激活',warming:'养号中',error:'异常',banned:'封禁',need_2fa:'需验证',login_failed:'登录失败',daily_limit:'达上限',restricted:'受限'};
+  return map[s] || s;
+}
+
+async function deleteAccount(id) {
+  if (!confirm('确定删除此账号？')) return;
+  await ipcRenderer.invoke('account-delete', id);
+  loadAccounts();
+  loadDashboard();
+}
+
+// 重新生成账号浏览器指纹
+async function regenerateFingerprint(id) {
+  if (!confirm('确定重新生成指纹？新指纹将在下次启动浏览器时生效，IG会检测到设备变更。')) return;
+  const res = await ipcRenderer.invoke('account-regenerate-fingerprint', id);
+  if (res.success) {
+    alert('指纹已重新生成，下次启动浏览器时生效');
+    loadAccounts();
+  } else {
+    alert('生成失败: ' + (res.error || '未知错误'));
+  }
+}
+
+// 账号浏览器控制（整合后）
+async function launchAccountBrowser(accountId) {
+  const accRes = await ipcRenderer.invoke('account-list');
+  const account = (accRes.accounts || []).find(a => a.id === accountId);
+  if (!account) { alert('账号不存在'); return; }
+
+  const config = {
+    accountId: accountId,
+    name: account.username,
+    proxyHost: account.proxyHost,
+    proxyPort: account.proxyPort,
+    proxyUser: account.proxyUser,
+    proxyPass: account.proxyPass,
+    headless: true,
+  };
+  const res = await ipcRenderer.invoke('browser-launch', config);
+  if (res.success) {
+    loadAccounts();
+  } else {
+    alert('启动失败：' + res.error);
+  }
+}
+
+async function closeAccountBrowser(accountId) {
+  await ipcRenderer.invoke('browser-close', accountId);
+  loadAccounts();
+}
+
+async function openIGInBrowser(accountId) {
+  await ipcRenderer.invoke('browser-goto', accountId, 'https://www.instagram.com/');
+  loadAccounts();
+}
+
+async function refreshBrowser(accountId) {
+  await ipcRenderer.invoke('browser-refresh', accountId);
+  loadAccounts();
+}
+
+async function loginAccount(accountId) {
+  const accRes = await ipcRenderer.invoke('account-list');
+  const account = (accRes.accounts || []).find(a => a.id === accountId);
+  if (!account) { alert('账号不存在'); return; }
+  if (!account.username || !account.password) { alert('请先在编辑中填写账号密码'); return; }
+
+  const res = await ipcRenderer.invoke('login-do', accountId, account.username, account.password);
+  if (res.need2FA) {
+    alert('需要 2FA 验证，请在浏览器中手动完成');
+  } else if (res.success) {
+    alert('登录成功，会话已持久化保存');
+  } else {
+    alert('登录失败：' + (res.error || '未知'));
+  }
+  loadAccounts();
+}
+
+async function editAccount(accountId) {
+  const accRes = await ipcRenderer.invoke('account-list');
+  const account = (accRes.accounts || []).find(a => a.id === accountId);
+  if (!account) return;
+  document.getElementById('editAccId').value = accountId;
+  document.getElementById('editAccUsername').textContent = '@' + (account.username || '');
+  document.getElementById('editAccPassword').value = '';
+  document.getElementById('editAccTwofa').value = account.twofaSecret || '';
+  document.getElementById('editAccCookies').value = account.cookies || '';
+  document.getElementById('editAccProxyType').value = account.proxyType || 'http';
+  document.getElementById('editAccProxyHost').value = account.proxyHost || '';
+  document.getElementById('editAccProxyPort').value = account.proxyPort || '';
+  document.getElementById('editAccProxyUser').value = account.proxyUser || '';
+  document.getElementById('editAccProxyPass').value = account.proxyPass || '';
+  document.getElementById('editAccountModal').style.display = 'flex';
+}
+function closeEditAccount() {
+  document.getElementById('editAccountModal').style.display = 'none';
+}
+async function saveEditAccount() {
+  const accountId = document.getElementById('editAccId').value;
+  const updates = {};
+  const pwd = document.getElementById('editAccPassword').value.trim();
+  if (pwd) updates.password = pwd;
+  updates.twofaSecret = document.getElementById('editAccTwofa').value.trim();
+  updates.cookies = document.getElementById('editAccCookies').value.trim();
+  updates.proxyType = document.getElementById('editAccProxyType').value;
+  updates.proxyHost = document.getElementById('editAccProxyHost').value.trim();
+  updates.proxyPort = document.getElementById('editAccProxyPort').value.trim();
+  updates.proxyUser = document.getElementById('editAccProxyUser').value.trim();
+  updates.proxyPass = document.getElementById('editAccProxyPass').value;
+  await ipcRenderer.invoke('account-update', accountId, updates);
+  closeEditAccount();
+  loadAccounts();
+}
+
+async function applyRegionToAll() {
+  const region = document.getElementById('warmupRegion').value;
+  const regionName = document.getElementById('warmupRegion').options[document.getElementById('warmupRegion').selectedIndex].text;
+  if (!confirm(`确定将所有账号的养号地区设置为「${regionName}」？`)) return;
+  const res = await ipcRenderer.invoke('account-list');
+  const accounts = res.accounts || [];
+  for (const acc of accounts) {
+    await ipcRenderer.invoke('account-update', acc.id, { warmupRegion: region });
+  }
+  alert(`已将 ${accounts.length} 个账号的养号地区设置为「${regionName}」`);
+  loadAccounts();
+}
+
+// 智能养号
+let currentWarmupMode = 'auto';
+
+ipcRenderer.on('warmupStatusUpdate', (event, status) => { updateWarmupUI(status); });
+
+async function loadWarmupAccounts() {
+  const res = await ipcRenderer.invoke('account-list');
+  const accounts = res.accounts || [];
+  const sel = document.getElementById('singleWarmupAccount');
+  if (sel) sel.innerHTML = '<option value="">请选择账号</option>' + accounts.map(a => `<option value="${a.id}">${a.username}${a.remark?' ('+a.remark+')':''}</option>`).join('');
+  renderWarmupAccountList(accounts);
+  document.getElementById('wAccTotal').textContent = accounts.length;
+  document.getElementById('wAccToday').textContent = accounts.filter(a => a.today_warmup_done).length;
+  const avgHealth = accounts.length ? Math.round(accounts.reduce((s,a) => s + (a.health_score||50), 0) / accounts.length) : 0;
+  const avgDays = accounts.length ? Math.round(accounts.reduce((s,a) => s + (a.warmup_days||0), 0) / accounts.length) : 0;
+  document.getElementById('wAvgHealth').textContent = avgHealth;
+  document.getElementById('wAvgDays').textContent = avgDays;
+}
+
+function renderWarmupAccountList(accounts) {
+  const tbody = document.getElementById('warmupAccountList');
+  if (accounts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9aa0a6;padding:16px">暂无账号，请先在「账号管理」添加</td></tr>';
+    return;
+  }
+  tbody.innerHTML = accounts.map(a => {
+    const health = a.health_score || 50;
+    const safetyLevel = health >= 80 ? {text:'安全', color:'#1e8e3e'} : health >= 60 ? {text:'正常', color:'#1a73e8'} : health >= 40 ? {text:'注意', color:'#f9ab00'} : {text:'危险', color:'#d93025'};
+    const todayStatus = a.today_warmup_done ? '<span class="status status-active">已完成</span>' : '<span class="status status-inactive">未养号</span>';
+    const planName = a.warmup_days <= 3 ? '保守 (Day 1-3)' : a.warmup_days <= 7 ? '标准 (Day 4-7)' : a.warmup_days <= 14 ? '活跃 (Day 8-14)' : '成熟 (Day 15+)';
+    return `<tr>
+      <td style="font-size:12px"><strong>${a.username}</strong></td>
+      <td style="text-align:center;font-weight:600">${a.warmup_days||0} 天</td>
+      <td>${todayStatus}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div class="progress-bar" style="width:50px"><div class="progress-fill" style="width:${health}%;background:${safetyLevel.color}"></div></div><span style="font-size:12px;font-weight:600">${health}</span></div></td>
+      <td style="color:${safetyLevel.color};font-weight:600;font-size:12px">${safetyLevel.text}</td>
+      <td style="font-size:11px;color:#5f6368">${planName}</td>
+    </tr>`;
+  }).join('');
+}
+
+function selectWarmupMode(mode) {
+  currentWarmupMode = mode;
+  ['Auto','Conservative','Standard'].forEach(m => {
+    const el = document.getElementById('mode' + m);
+    if (el) el.classList.remove('selected');
+  });
+  const modeMap = {auto:'Auto', conservative:'Conservative', standard:'Standard'};
+  const selected = document.getElementById('mode' + modeMap[mode]);
+  if (selected) selected.classList.add('selected');
+
+  const descMap = {
+    auto: '根据账号养号天数自动选择策略（Day 1-3 保守 / 4-7 标准 / 8+ 活跃）',
+    conservative: '仅浏览不互动，每次 5 分钟，适合新号建立基础活跃度',
+    standard: '浏览 + 少量点赞（20% 概率，最多 5 次）+ 看 Story，每次 15 分钟',
+    custom: '自定义所有参数',
+  };
+  document.getElementById('warmupModeDesc').textContent = descMap[mode] || '';
+  document.getElementById('customWarmupParams').style.display = mode === 'custom' ? 'block' : 'none';
+}
+
+async function startBatchWarmup() {
+  const customParams = currentWarmupMode === 'custom' ? {
+    durationMin: parseInt(document.getElementById('custDuration').value),
+    likeProbability: parseFloat(document.getElementById('custLikeProb').value),
+    maxLikes: parseInt(document.getElementById('custMaxLikes').value),
+    storyCount: parseInt(document.getElementById('custStories').value),
+    pauseIntervalMin: parseInt(document.getElementById('custPauseInt').value),
+    pauseDurationSec: parseInt(document.getElementById('custPauseDur').value),
+    enableLike: document.getElementById('custEnableLike').checked,
+    enableStory: document.getElementById('custEnableStory').checked,
+    enableExplore: document.getElementById('custEnableExplore').checked,
+  } : null;
+
+  const res = await ipcRenderer.invoke('warmup-start', { mode: currentWarmupMode, customParams });
+  if (res.success) {
+    alert('批量养号已启动\n账号数：' + res.accountCount + '\n模式：' + currentWarmupMode + '\n所有任务 headless 静默运行');
+  } else {
+    alert('启动失败：' + res.error);
+  }
+}
+
+async function pauseWarmup() { await ipcRenderer.invoke('warmup-pause'); }
+async function resumeWarmup() { await ipcRenderer.invoke('warmup-resume'); }
+
+async function stopWarmup() {
+  if (!confirm('确定停止养号任务？')) return;
+  await ipcRenderer.invoke('warmup-stop');
+}
+
+async function startSingleWarmup() {
+  const id = document.getElementById('singleWarmupAccount').value;
+  if (!id) { alert('请选择账号'); return; }
+  const res = await ipcRenderer.invoke('warmup-single', id, currentWarmupMode);
+  if (res.success) {
+    alert('单账号养号完成');
+    loadWarmupAccounts();
+  } else {
+    alert('养号失败：' + res.error);
+  }
+}
+
+async function manualWarmupById(id) {
+  const res = await ipcRenderer.invoke('warmup-single', id, 'auto');
+  if (res.success) {
+    alert('养号完成');
+    loadWarmupAccounts();
+    loadDashboard();
+  } else {
+    alert('养号失败：' + res.error);
+  }
+}
+
+async function setSchedule() {
+  const time = document.getElementById('scheduleTime').value;
+  const duration = parseInt(document.getElementById('scheduleDuration').value);
+  const res = await ipcRenderer.invoke('warmup-schedule-set', time, duration);
+  if (res.success) alert('定时养号已设置：每天 ' + time + '，时长 ' + duration + ' 分钟');
+}
+
+async function clearSchedule() {
+  await ipcRenderer.invoke('warmup-schedule-clear');
+  alert('定时养号已取消');
+}
+
+function updateWarmupUI(status) {
+  const banner = document.getElementById('warmupBanner');
+  if (status.running) {
+    banner.className = 'status-banner running';
+    document.getElementById('warmupStatusText').textContent = status.paused ? '养号已暂停' : '养号进行中';
+    document.getElementById('warmupCurrent').textContent = status.currentAccount ? '当前：' + status.currentAccount : '';
+    document.getElementById('btnWarmupStart').style.display = 'none';
+    document.getElementById('btnWarmupPause').style.display = status.paused ? 'none' : 'inline-block';
+    document.getElementById('btnWarmupResume').style.display = status.paused ? 'inline-block' : 'none';
+    document.getElementById('btnWarmupStop').style.display = 'inline-block';
+  } else {
+    banner.className = 'status-banner stopped';
+    document.getElementById('warmupStatusText').textContent = '养号未启动';
+    document.getElementById('warmupCurrent').textContent = '';
+    document.getElementById('btnWarmupStart').style.display = 'inline-block';
+    document.getElementById('btnWarmupPause').style.display = 'none';
+    document.getElementById('btnWarmupResume').style.display = 'none';
+    document.getElementById('btnWarmupStop').style.display = 'none';
+    loadWarmupAccounts();
+  }
+  if (status.logs && status.logs.length > 0) {
+    const box = document.getElementById('warmupLogBox');
+    box.innerHTML = status.logs.slice(0, 80).map(l =>
+      `<div class="log-${l.type==='error'?'error':l.type==='warn'?'warn':l.type==='ok'?'ok':'info'}"><span class="time">${new Date(l.time).toLocaleTimeString()}</span>[${l.account}] ${l.msg}</div>`
+    ).join('');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => selectWarmupMode('auto'), 100);
+});
+
+// 设置
+async function loadSettings() {
+  const res = await ipcRenderer.invoke('settings-get');
+  const s = res.settings;
+  document.getElementById('setInterval').value = s.warmup.intervalMinutes;
+  document.getElementById('setFeedScroll').value = s.warmup.feedScrollCount;
+  document.getElementById('setLikeProb').value = s.warmup.likeProbability;
+  document.getElementById('setStoryCount').value = s.warmup.storyCount;
+  document.getElementById('setMinStay').value = s.warmup.minStayMs;
+  document.getElementById('setMaxStay').value = s.warmup.maxStayMs;
+  document.getElementById('setProxyHost').value = s.proxy.defaultHost;
+  document.getElementById('setProxyPort').value = s.proxy.defaultPort;
+  document.getElementById('setProxyUser').value = s.proxy.defaultUser;
+  document.getElementById('setProxyPass').value = s.proxy.defaultPass;
+
+  // 更新会员中心状态
+  const licenseRes = await ipcRenderer.invoke('license:getStatus');
+  if (licenseRes.success) {
+    const statusMap = { trial: '免费试用', trial_expired: '试用已结束', active: '已激活', expired: '已过期' };
+    let statusText = statusMap[licenseRes.status] || licenseRes.status;
+    if (licenseRes.status === 'trial') statusText += '（剩余' + licenseRes.trialDaysLeft + '天）';
+    if (licenseRes.status === 'active') statusText += '（' + (licenseRes.maxAccounts || 0) + '账号）';
+    document.getElementById('settingsLicenseStatus').textContent = statusText;
+    document.getElementById('settingsLicenseMachine').textContent = '机器码: ' + (licenseRes.machineCode || '----');
+  }
+
+  // 显示登录用户
+  const authRes = await ipcRenderer.invoke('auth:status');
+  if (authRes.loggedIn && authRes.user) {
+    document.getElementById('settingsUserEmail').textContent = '账号: ' + authRes.user.email;
+  } else {
+    document.getElementById('settingsUserEmail').textContent = '未登录';
+  }
+}
+
+async function saveSettings() {
+  const settings = {
+    warmup: {
+      intervalMinutes: parseInt(document.getElementById('setInterval').value),
+      feedScrollCount: parseInt(document.getElementById('setFeedScroll').value),
+      likeProbability: parseFloat(document.getElementById('setLikeProb').value),
+      storyCount: parseInt(document.getElementById('setStoryCount').value),
+      minStayMs: parseInt(document.getElementById('setMinStay').value),
+      maxStayMs: parseInt(document.getElementById('setMaxStay').value),
+      dailyLikeLimit: 50,
+      enabled: false,
+    },
+    proxy: {
+      defaultHost: document.getElementById('setProxyHost').value.trim(),
+      defaultPort: document.getElementById('setProxyPort').value.trim(),
+      defaultUser: document.getElementById('setProxyUser').value.trim(),
+      defaultPass: document.getElementById('setProxyPass').value,
+    },
+  };
+  await ipcRenderer.invoke('settings-save', settings);
+  alert('设置已保存');
+}
+
+// 群发系统
+let dmTemplates = [];
+let dmSelectedTemplates = new Set();
+
+ipcRenderer.on('taskProgress', (event, progress) => { updateDMProgress(progress); });
+
+async function loadMassDMPage() {
+  await loadTemplates();
+  await loadAccountCheckboxes();
+  await refreshLeadsStats();
+  const status = await ipcRenderer.invoke('massdm-status');
+  if (status.running) updateDMProgress(status);
+}
+
+async function loadTemplates() {
+  const res = await ipcRenderer.invoke('templates-list');
+  dmTemplates = res.templates || [];
+  renderTemplates();
+}
+
+function renderTemplates() {
+  const container = document.getElementById('templateList');
+  if (dmTemplates.length === 0) {
+    container.innerHTML = '<div style="color:#9aa0a6;font-size:12px;padding:10px">暂无话术，请先添加</div>';
+    return;
+  }
+  container.innerHTML = dmTemplates.map(t => `
+    <div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#f8f9fa;border-radius:6px;margin-bottom:6px">
+      <input type="checkbox" ${dmSelectedTemplates.has(t.id)?'checked':''} onchange="toggleTemplate('${t.id}')" style="margin-top:3px;accent-color:#1a73e8">
+      <div style="flex:1;font-size:12px;color:#3c4043;word-break:break-all;line-height:1.5">
+        ${t.content}
+        ${t.images && t.images.length > 0 ? `<div style="margin-top:4px;font-size:11px;color:#1a73e8">📷 ${t.images.length} 张图片（随机选1张发送）</div>` : ''}
+      </div>
+      <button class="btn btn-sm btn-danger" onclick="deleteTemplate('${t.id}')" style="padding:2px 8px">删除</button>
+    </div>
+  `).join('');
+}
+
+function toggleTemplate(id) {
+  if (dmSelectedTemplates.has(id)) dmSelectedTemplates.delete(id);
+  else dmSelectedTemplates.add(id);
+}
+
+// 话术模板待添加的图片（已上传到软件目录的文件名和完整路径）
+let pendingTemplateImages = []; // [{ fileName, fullPath }]
+let templateImageDir = '';
+
+// 处理选择的模板图片：上传到软件目录并显示缩略图
+async function handleTemplateImages(files) {
+  if (!files || files.length === 0) return;
+  const filePaths = Array.from(files).map(f => f.path);
+  const res = await ipcRenderer.invoke('template-upload-images', filePaths);
+  if (res.success && res.files.length > 0) {
+    templateImageDir = res.dir;
+    res.files.forEach(fileName => {
+      const fullPath = res.dir + '\\' + fileName;
+      pendingTemplateImages.push({ fileName, fullPath });
+    });
+    renderTemplateImagePreview();
+  }
+  // 清空 input，允许重复选同一张图
+  document.getElementById('tplImageInput').value = '';
+}
+
+// 渲染待添加图片的缩略图
+function renderTemplateImagePreview() {
+  const container = document.getElementById('tplImagePreview');
+  const countEl = document.getElementById('tplImageCount');
+  countEl.textContent = pendingTemplateImages.length > 0 ? `已选 ${pendingTemplateImages.length} 张图片（发送时随机选1张）` : '未添加图片';
+  if (pendingTemplateImages.length === 0) {
+    container.innerHTML = '';
+    return;
+  }
+  container.innerHTML = pendingTemplateImages.map((img, idx) => `
+    <div style="position:relative;width:60px;height:60px;border-radius:4px;overflow:hidden;border:1px solid #dadce0">
+      <img src="file:///${encodeURI(img.fullPath.replace(/\\/g, '/'))}" style="width:100%;height:100%;object-fit:cover">
+      <button onclick="removePendingImage(${idx})" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(0,0,0,0.6);color:#fff;border:none;font-size:12px;cursor:pointer;line-height:1">×</button>
+    </div>
+  `).join('');
+}
+
+// 移除一张待添加的图片
+function removePendingImage(idx) {
+  pendingTemplateImages.splice(idx, 1);
+  renderTemplateImagePreview();
+}
+
+async function addTemplate() {
+  const content = document.getElementById('tplContent').value.trim();
+  if (!content) { alert('请输入话术内容'); return; }
+  const imageNames = pendingTemplateImages.map(img => img.fileName);
+  await ipcRenderer.invoke('templates-add', { content, images: imageNames });
+  document.getElementById('tplContent').value = '';
+  pendingTemplateImages = [];
+  renderTemplateImagePreview();
+  await loadTemplates();
+}
+
+async function deleteTemplate(id) {
+  if (!confirm('删除此话术？')) return;
+  dmSelectedTemplates.delete(id);
+  await ipcRenderer.invoke('templates-delete', id);
+  await loadTemplates();
+}
+
+async function loadAccountCheckboxes() {
+  const res = await ipcRenderer.invoke('account-list');
+  const accounts = res.accounts || [];
+  const container = document.getElementById('accountCheckboxes');
+  if (accounts.length === 0) {
+    container.innerHTML = '<div style="color:#9aa0a6;font-size:12px;padding:10px">暂无账号，请先在「账号管理」添加</div>';
+    return;
+  }
+  container.innerHTML = accounts.map(a => `
+    <label class="check-row">
+      <input type="checkbox" class="dm-account-cb" value="${a.id}" ${a.status==='active'?'checked':''}>
+      <span>${a.username}</span>
+      <span class="status status-${a.status}" style="margin-left:auto;font-size:10px">${statusText(a.status)}</span>
+    </label>
+  `).join('');
+}
+
+function getSelectedAccounts() {
+  return Array.from(document.querySelectorAll('.dm-account-cb:checked')).map(cb => cb.value);
+}
+
+function getDedupRule() {
+  return document.querySelector('input[name="dedupRule"]:checked').value;
+}
+
+async function refreshLeadsStats() {
+  const res = await ipcRenderer.invoke('leads-stats');
+  document.getElementById('leadTotal').textContent = res.total;
+  document.getElementById('leadPending').textContent = res.pending;
+  document.getElementById('leadSent').textContent = res.sent;
+  document.getElementById('leadFailed').textContent = res.failed;
+}
+
+async function importLeads() {
+  const text = document.getElementById('leadsImport').value.trim();
+  if (!text) { alert('请输入用户名，每行一个'); return; }
+  const usernames = text.split('\n').map(u => u.trim()).filter(u => u);
+  const leads = usernames.map(u => ({ username: u }));
+  const res = await ipcRenderer.invoke('leads-import', leads);
+  alert('导入完成：新增 ' + res.added + ' 个，名单总数 ' + res.total);
+  document.getElementById('leadsImport').value = '';
+  await refreshLeadsStats();
+}
+
+async function clearLeads() {
+  if (!confirm('确定清空所有目标名单？')) return;
+  await ipcRenderer.invoke('leads-clear');
+  await refreshLeadsStats();
+}
+
+async function startMassDM() {
+  const accountIds = getSelectedAccounts();
+  if (accountIds.length === 0) { alert('请至少选择一个发送账号'); return; }
+  const templateIds = dmSelectedTemplates.size > 0 ? Array.from(dmSelectedTemplates) : null;
+  if (!templateIds && dmTemplates.length === 0) { alert('请至少添加一套话术'); return; }
+  const dedupRule = getDedupRule();
+
+  const res = await ipcRenderer.invoke('massdm-start', { accountIds, templateIds, dedupRule });
+  if (res.success) {
+    alert('群发已启动\n名单：' + res.totalLeads + ' 个\n账号：' + res.accounts + ' 个\n模式：headless 静默运行');
+    document.getElementById('btnDMStart').style.display = 'none';
+    document.getElementById('btnDMPause').style.display = 'inline-block';
+    document.getElementById('btnDMStop').style.display = 'inline-block';
+  } else {
+    alert('启动失败：' + res.error);
+  }
+}
+
+async function pauseMassDM() {
+  await ipcRenderer.invoke('massdm-pause');
+  document.getElementById('btnDMPause').style.display = 'none';
+  document.getElementById('btnDMResume').style.display = 'inline-block';
+}
+
+async function resumeMassDM() {
+  await ipcRenderer.invoke('massdm-resume');
+  document.getElementById('btnDMResume').style.display = 'none';
+  document.getElementById('btnDMPause').style.display = 'inline-block';
+}
+
+async function stopMassDM() {
+  if (!confirm('确定停止群发任务？')) return;
+  await ipcRenderer.invoke('massdm-stop');
+  document.getElementById('btnDMStart').style.display = 'inline-block';
+  document.getElementById('btnDMPause').style.display = 'none';
+  document.getElementById('btnDMResume').style.display = 'none';
+  document.getElementById('btnDMStop').style.display = 'none';
+}
+
+function updateDMProgress(progress) {
+  const { total, accountStats, logs, running, paused } = progress;
+  const done = (total.success || 0) + (total.failed || 0) + (total.skipped || 0);
+  const pct = total.total > 0 ? Math.round(done / total.total * 100) : 0;
+  document.getElementById('progressPct').textContent = pct + '%';
+  document.getElementById('progressRing').style.strokeDashoffset = 239 - (239 * pct / 100);
+
+  document.getElementById('statSuccess').textContent = total.success || 0;
+  document.getElementById('statFailed').textContent = total.failed || 0;
+  document.getElementById('statSkipped').textContent = total.skipped || 0;
+  document.getElementById('statTotal').textContent = total.total || 0;
+
+  const tbody = document.getElementById('dmAccountStats');
+  const accIds = Object.keys(accountStats);
+  if (accIds.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#9aa0a6;padding:16px">未开始</td></tr>';
+  } else {
+    tbody.innerHTML = accIds.map(id => {
+      const s = accountStats[id];
+      const accPct = s.total > 0 ? Math.round(((s.success+s.failed+s.skipped)/s.total)*100) : 0;
+      return `<tr>
+        <td style="font-size:12px"><strong>${s.username}</strong></td>
+        <td style="font-size:11px;color:${s.current?'#1a73e8':'#9aa0a6'}">${s.current || '-'}</td>
+        <td style="color:#1e8e3e;font-weight:600">${s.success}</td>
+        <td style="color:#d93025;font-weight:600">${s.failed}</td>
+        <td style="color:#f9ab00">${s.skipped}</td>
+        <td><div class="progress-bar" style="width:80px"><div class="progress-fill" style="width:${accPct}%"></div></div><span style="font-size:11px;margin-left:6px;color:#5f6368">${accPct}%</span></td>
+      </tr>`;
+    }).join('');
+  }
+
+  if (logs && logs.length > 0) {
+    const box = document.getElementById('dmLogBox');
+    box.innerHTML = logs.slice(0, 80).map(l =>
+      `<div class="log-${l.type==='error'?'error':l.type==='warn'?'warn':l.type==='ok'?'ok':'info'}"><span class="time">${new Date(l.time).toLocaleTimeString()}</span>[${l.account}] ${l.msg}</div>`
+    ).join('');
+  }
+
+  if (!running) {
+    document.getElementById('btnDMStart').style.display = 'inline-block';
+    document.getElementById('btnDMPause').style.display = 'none';
+    document.getElementById('btnDMResume').style.display = 'none';
+    document.getElementById('btnDMStop').style.display = 'none';
+    refreshLeadsStats();
+  }
+}
+
+// ========== 获客采集 ==========
+let scrapeCollected = [];
+
+ipcRenderer.on('extractionProgress', (event, progress) => {
+  updateScrapeUI(progress);
+});
+
+async function loadScraperPage() {
+  const res = await ipcRenderer.invoke('account-list');
+  const accounts = res.accounts || [];
+  const sel = document.getElementById('scrapeAccount');
+  sel.innerHTML = '<option value="">请选择账号</option>' + accounts.map(a => `<option value="${a.id}">${a.username}${a.remark?' ('+a.remark+')':''}</option>`).join('');
+
+  // 检查是否有运行中的任务
+  const status = await ipcRenderer.invoke('extraction-status');
+  if (status.running) {
+    updateScrapeUI({ collected: status.task?.collected || 0, target: status.task?.maxCount || 0, message: '采集中...' });
+  }
+}
+
+async function startExtraction() {
+  const accountId = document.getElementById('scrapeAccount').value;
+  const targetUsername = document.getElementById('scrapeTarget').value.trim();
+  const type = document.getElementById('scrapeType').value;
+  const maxCount = parseInt(document.getElementById('scrapeMax').value);
+  const autoSave = document.getElementById('scrapeAutoSave').checked;
+
+  if (!accountId) { alert('请选择执行采集的账号'); return; }
+  if (!targetUsername) { alert('请输入目标主页用户名'); return; }
+  if (!maxCount || maxCount < 10) { alert('采集数量至少 10 个'); return; }
+
+  scrapeCollected = [];
+  document.getElementById('scrapePreview').innerHTML = '<tr><td colspan="4" style="text-align:center;color:#9aa0a6;padding:24px">采集中...</td></tr>';
+
+  const res = await ipcRenderer.invoke('extraction-start', { accountId, targetUsername, type, maxCount, autoSave });
+  if (res.success) {
+    document.getElementById('btnScrapeStart').style.display = 'none';
+    document.getElementById('btnScrapeStop').style.display = 'inline-block';
+    document.getElementById('scrapeGoDM').style.display = 'none';
+    document.getElementById('scrapeTargetNum').textContent = maxCount;
+  } else {
+    alert('启动失败：' + res.error);
+  }
+}
+
+async function stopExtraction() {
+  await ipcRenderer.invoke('extraction-stop');
+  document.getElementById('scrapeStatusText').textContent = '正在停止...';
+}
+
+// 采集完成后跳转到群发系统
+function goToMassDM() {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelector('.tab[data-page="massdm"]').classList.add('active');
+  document.getElementById('page-massdm').classList.add('active');
+  loadMassDMPage();
+  refreshLeadsStats();
+}
+
+// ========== 自动回复 ==========
+let autoReplyRules = [];
+
+async function loadAutoReplyPage() {
+  await loadAutoReplyRules();
+  await loadAutoReplyAccounts();
+  await loadAutoReplyLogs();
+  await refreshAutoReplyStatus();
+}
+
+async function loadAutoReplyRules() {
+  const res = await ipcRenderer.invoke('autoreply-rules-list');
+  autoReplyRules = res.rules || [];
+  renderAutoReplyRules();
+}
+
+function renderAutoReplyRules() {
+  const container = document.getElementById('arRuleList');
+  if (autoReplyRules.length === 0) {
+    container.innerHTML = '<div style="color:#9aa0a6;font-size:12px;padding:16px;text-align:center">暂无规则，请添加</div>';
+    return;
+  }
+  const typeMap = { contains: '包含', exact: '精准', default_fallback: '兜底' };
+  container.innerHTML = autoReplyRules.map(r => `
+    <div style="display:flex;align-items:flex-start;gap:8px;padding:10px;border-bottom:1px solid #f1f3f4">
+      <label style="margin-top:3px;cursor:pointer">
+        <input type="checkbox" ${r.is_active !== false ? 'checked' : ''} onchange="toggleAutoReplyRule('${r.id}')" style="accent-color:#1a73e8">
+      </label>
+      <div style="flex:1;font-size:12px">
+        <div><span style="background:#e8f0fe;color:#1a73e8;padding:2px 6px;border-radius:3px;font-size:11px">${typeMap[r.match_type] || r.match_type}</span> <strong>${r.keyword}</strong></div>
+        <div style="color:#5f6368;margin-top:4px;word-break:break-all">${r.reply_content}</div>
+      </div>
+      <button class="btn btn-sm btn-danger" onclick="deleteAutoReplyRule('${r.id}')" style="padding:2px 8px">删除</button>
+    </div>
+  `).join('');
+}
+
+async function addAutoReplyRule() {
+  const keyword = document.getElementById('arKeyword').value.trim();
+  const replyContent = document.getElementById('arReplyContent').value.trim();
+  const matchType = document.getElementById('arMatchType').value;
+  if (!replyContent) { alert('请输入回复内容'); return; }
+  if (matchType !== 'default_fallback' && !keyword) { alert('请输入关键字'); return; }
+  await ipcRenderer.invoke('autoreply-rules-add', { keyword, reply_content: replyContent, match_type: matchType });
+  document.getElementById('arKeyword').value = '';
+  document.getElementById('arReplyContent').value = '';
+  await loadAutoReplyRules();
+}
+
+async function deleteAutoReplyRule(id) {
+  if (!confirm('删除此规则？')) return;
+  await ipcRenderer.invoke('autoreply-rules-delete', id);
+  await loadAutoReplyRules();
+}
+
+async function toggleAutoReplyRule(id) {
+  const rule = autoReplyRules.find(r => r.id === id);
+  if (!rule) return;
+  await ipcRenderer.invoke('autoreply-rules-update', id, { is_active: rule.is_active === false });
+  await loadAutoReplyRules();
+}
+
+async function loadAutoReplyAccounts() {
+  const accRes = await ipcRenderer.invoke('account-list');
+  const accounts = accRes.accounts || [];
+  const statusRes = await ipcRenderer.invoke('autoreply-status');
+  const accountEnabled = statusRes.accountEnabled || {};
+  const container = document.getElementById('arAccountList');
+  if (accounts.length === 0) {
+    container.innerHTML = '<div style="color:#9aa0a6;font-size:12px;padding:10px">暂无账号</div>';
+    return;
+  }
+  container.innerHTML = accounts.map(a => `
+    <label class="check-row">
+      <input type="checkbox" ${accountEnabled[a.id] !== false ? 'checked' : ''} onchange="toggleAutoReplyAccount('${a.id}', this.checked)">
+      <span>${a.username}</span>
+      <span class="status status-${a.status}" style="margin-left:auto;font-size:10px">${statusText(a.status)}</span>
+    </label>
+  `).join('');
+}
+
+async function toggleAutoReplyAccount(accountId, enabled) {
+  await ipcRenderer.invoke('autoreply-account-toggle', accountId, enabled);
+}
+
+async function startAutoReply() {
+  const interval = parseInt(document.getElementById('arInterval').value);
+  await ipcRenderer.invoke('autoreply-set-interval', interval);
+  const res = await ipcRenderer.invoke('autoreply-start', { intervalMinutes: interval });
+  if (res.success) {
+    document.getElementById('btnARStart').style.display = 'none';
+    document.getElementById('btnARStop').style.display = 'inline-block';
+    document.getElementById('arStatusText').textContent = '监听中（每' + interval + '分钟）';
+    document.getElementById('arStatusText').style.color = '#1e8e3e';
+  } else {
+    alert('启动失败: ' + (res.error || '未知错误'));
+  }
+}
+
+async function stopAutoReply() {
+  await ipcRenderer.invoke('autoreply-stop');
+  document.getElementById('btnARStart').style.display = 'inline-block';
+  document.getElementById('btnARStop').style.display = 'none';
+  document.getElementById('arStatusText').textContent = '已停止';
+  document.getElementById('arStatusText').style.color = '#9aa0a6';
+}
+
+async function triggerAutoReplyScan() {
+  const res = await ipcRenderer.invoke('autoreply-scan-now');
+  if (!res.success) alert('扫描失败: ' + (res.error || '已有任务在运行'));
+}
+
+async function refreshAutoReplyStatus() {
+  const res = await ipcRenderer.invoke('autoreply-status');
+  if (res.running) {
+    document.getElementById('btnARStart').style.display = 'none';
+    document.getElementById('btnARStop').style.display = 'inline-block';
+    document.getElementById('arStatusText').textContent = '监听中（每' + (res.intervalMinutes || 5) + '分钟）';
+    document.getElementById('arStatusText').style.color = '#1e8e3e';
+  } else {
+    document.getElementById('btnARStart').style.display = 'inline-block';
+    document.getElementById('btnARStop').style.display = 'none';
+    document.getElementById('arStatusText').textContent = '未启动';
+    document.getElementById('arStatusText').style.color = '#9aa0a6';
+  }
+  if (res.intervalMinutes) {
+    document.getElementById('arInterval').value = res.intervalMinutes;
+  }
+}
+
+async function loadAutoReplyLogs() {
+  const res = await ipcRenderer.invoke('autoreply-logs');
+  const logs = res.logs || [];
+  const box = document.getElementById('arLogBox');
+  if (logs.length === 0) {
+    box.innerHTML = '<div class="log-info">[系统] 暂无回复记录</div>';
+    return;
+  }
+  box.innerHTML = logs.map(l => {
+    const time = new Date(l.created_at).toLocaleTimeString();
+    const cls = l.matched_keyword ? 'log-ok' : 'log-info';
+    return `<div class="${cls}">[${time}] ${l.account_username || ''} → ${l.sender_username || ''}: 「${(l.received_message || '').substring(0, 30)}」→ 「${(l.sent_reply || '').substring(0, 30)}」</div>`;
+  }).join('');
+}
+
+// 实时日志推送
+ipcRenderer.on('autoReplyLog', (event, log) => {
+  const box = document.getElementById('arLogBox');
+  if (!box) return;
+  const time = new Date(log.time).toLocaleTimeString();
+  const cls = log.type === 'ok' ? 'log-ok' : log.type === 'error' ? 'log-error' : 'log-info';
+  const div = document.createElement('div');
+  div.className = cls;
+  div.textContent = `[${time}] ${log.account}: ${log.msg}`;
+  box.insertBefore(div, box.firstChild);
+  // 限制日志数量
+  while (box.children.length > 100) box.removeChild(box.lastChild);
+});
+
+function updateScrapeUI(progress) {
+  const { collected, target, percentage, message, task } = progress;
+
+  document.getElementById('scrapeStatusText').textContent = message || '等待开始';
+  document.getElementById('scrapeCountText').textContent = collected + ' / ' + target;
+  document.getElementById('scrapeProgressBar').style.width = (percentage || 0) + '%';
+  document.getElementById('scrapeCollected').textContent = collected;
+  document.getElementById('scrapeTargetNum').textContent = target;
+
+  if (task) {
+    document.getElementById('scrapeSaved').textContent = task.saved || 0;
+    document.getElementById('scrapeSkipped').textContent = task.skipped || 0;
+  }
+
+  // 任务完成
+  if (task && task.status === 'completed') {
+    document.getElementById('btnScrapeStart').style.display = 'inline-block';
+    document.getElementById('btnScrapeStop').style.display = 'none';
+    document.getElementById('scrapeStatusText').textContent = '采集完成，共 ' + collected + ' 条';
+    document.getElementById('scrapeGoDM').style.display = 'block';
+    loadScrapePreview();
+  }
+  if (task && task.status === 'failed') {
+    document.getElementById('btnScrapeStart').style.display = 'inline-block';
+    document.getElementById('btnScrapeStop').style.display = 'none';
+    document.getElementById('scrapeStatusText').textContent = '采集失败：' + (task.error || '未知错误');
+    document.getElementById('scrapeGoDM').style.display = 'none';
+  }
+}
+
+async function loadScrapePreview() {
+  const res = await ipcRenderer.invoke('extraction-collected');
+  scrapeCollected = res.leads || [];
+  const tbody = document.getElementById('scrapePreview');
+  if (scrapeCollected.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#9aa0a6;padding:24px">暂无采集数据</td></tr>';
+    return;
+  }
+  tbody.innerHTML = scrapeCollected.slice(0, 200).map((l, i) => `
+    <tr>
+      <td style="font-size:12px;color:#9aa0a6">${i + 1}</td>
+      <td style="font-size:12px"><strong>${l.username}</strong></td>
+      <td style="font-size:12px;color:#5f6368">${l.fullName || '-'}</td>
+      <td style="font-size:11px;color:#9aa0a6">@${l.targetSource || '-'}</td>
+    </tr>
+  `).join('');
+}
+
+async function exportScrapeCSV() {
+  if (scrapeCollected.length === 0) { alert('暂无数据可导出'); return; }
+  const res = await ipcRenderer.invoke('extraction-export', scrapeCollected);
+  if (res.success && res.csv) {
+    // 下载 CSV
+    const blob = new Blob([res.csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'leads_' + new Date().toISOString().slice(0,10) + '.csv';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+}
+
+// ============================================================
+// 软件自动更新
+// ============================================================
+
+// 监听：发现新版本
+ipcRenderer.on('update-available', (event, data) => {
+  document.getElementById('updateTitle').textContent = '发现新版本';
+  document.getElementById('updateSubtitle').textContent = '新版本 v' + data.version + ' 可用';
+  document.getElementById('updateBody').innerHTML = '<p>新版本已发布，建议立即更新以获得更好的体验和功能。</p>';
+  document.getElementById('updateProgress').style.display = 'none';
+  document.getElementById('updateBtnConfirm').style.display = '';
+  document.getElementById('updateBtnCancel').style.display = '';
+  document.getElementById('updateModal').style.display = 'flex';
+});
+
+// 监听：下载进度
+ipcRenderer.on('download-progress', (event, data) => {
+  document.getElementById('updateProgress').style.display = 'block';
+  document.getElementById('updateProgressFill').style.width = data.percent + '%';
+  document.getElementById('updateProgressText').textContent = '下载中... ' + data.percent + '%';
+  document.getElementById('updateBtnConfirm').style.display = 'none';
+  document.getElementById('updateBtnCancel').style.display = 'none';
+});
+
+// 监听：下载完成
+ipcRenderer.on('update-downloaded', (event, data) => {
+  document.getElementById('updateTitle').textContent = '更新已就绪';
+  document.getElementById('updateSubtitle').textContent = 'v' + data.version + ' 下载完成';
+  document.getElementById('updateBody').innerHTML = '<p>新版本已下载完成，点击「立即安装」将重启软件并完成更新。</p>';
+  document.getElementById('updateProgress').style.display = 'none';
+  document.getElementById('updateBtnConfirm').textContent = '立即安装';
+  document.getElementById('updateBtnConfirm').onclick = installUpdate;
+  document.getElementById('updateBtnConfirm').style.display = '';
+  document.getElementById('updateBtnCancel').textContent = '稍后安装';
+  document.getElementById('updateBtnCancel').style.display = '';
+});
+
+// 开始下载更新
+function startDownloadUpdate() {
+  ipcRenderer.send('download-update');
+  document.getElementById('updateBtnConfirm').disabled = true;
+  document.getElementById('updateBtnConfirm').textContent = '准备下载...';
+}
+
+// 安装更新并重启
+function installUpdate() {
+  ipcRenderer.send('install-update');
+}
+
+// 关闭更新弹窗
+function closeUpdateModal() {
+  document.getElementById('updateModal').style.display = 'none';
+}
+</script>
+<!-- 会员中心弹窗（Cursor 风格） -->
+<div id="licenseModal" class="license-modal" style="display:none">
+  <div class="license-modal-overlay" onclick="closeLicenseModal()"></div>
+  <div class="license-modal-box">
+    <div class="license-modal-header">
+      <div class="license-logo">
+        <img src="logo-full.png" style="height:40px;width:auto" alt="智连 IG">
+      </div>
+      <div>
+        <div class="license-title" id="licenseModalTitle">智连 IG Pro</div>
+        <div class="license-subtitle" id="licenseModalSubtitle">解锁全部功能</div>
+      </div>
+      <button class="license-close" onclick="closeLicenseModal()">×</button>
+    </div>
+
+    <div class="license-status-card" id="licenseStatusCard">
+      <div class="license-status-row">
+        <span class="license-status-label">当前版本</span>
+        <span class="license-status-value" id="licensePlanText">免费试用</span>
+      </div>
+      <div class="license-status-row">
+        <span class="license-status-label">机器码</span>
+        <span class="license-status-value license-machine-code" id="licenseMachineCode">----</span>
+      </div>
+      <div class="license-status-row" id="licenseTrialRow">
+        <span class="license-status-label">试用剩余</span>
+        <span class="license-status-value" id="licenseTrialDays">-- 天</span>
+      </div>
+      <div class="license-status-row" id="licenseExpireRow" style="display:none">
+        <span class="license-status-label">有效期至</span>
+        <span class="license-status-value" id="licenseExpireDate">--</span>
+      </div>
+    </div>
+
+    <div class="license-plans">
+      <div class="license-plan-card" data-plan="basic" onclick="selectPlan('basic')">
+        <div class="license-plan-name">基础版</div>
+        <div class="license-plan-price"><span class="price-num">¥99</span><span class="price-unit">/月</span></div>
+        <div class="license-plan-desc">10 个账号</div>
+      </div>
+      <div class="license-plan-card recommended" data-plan="vip" onclick="selectPlan('vip')">
+        <div class="license-plan-badge">推荐</div>
+        <div class="license-plan-name">VIP版</div>
+        <div class="license-plan-price"><span class="price-num">¥199</span><span class="price-unit">/月</span></div>
+        <div class="license-plan-desc">20 个账号</div>
+      </div>
+      <div class="license-plan-card" data-plan="pro" onclick="selectPlan('pro')">
+        <div class="license-plan-name">Pro版</div>
+        <div class="license-plan-price"><span class="price-num">¥399</span><span class="price-unit">/月</span></div>
+        <div class="license-plan-desc">50 个账号</div>
+      </div>
+    </div>
+
+    <div class="license-actions">
+      <button class="license-upgrade-btn" id="licenseUpgradeBtn" onclick="openCheckout()">升级 Pro</button>
+      <div class="license-tip" id="licenseTip">支付后自动激活，支持微信/支付宝</div>
+    </div>
+
+    <div class="license-loading" id="licenseLoading" style="display:none">
+      <div class="license-spinner"></div>
+      <div>已在浏览器中打开支付页面，等待完成验证...</div>
+    </div>
+  </div>
+</div>
+
+<!-- 软件更新弹窗 -->
+<div id="updateModal" class="update-modal" style="display:none">
+  <div class="update-modal-overlay"></div>
+  <div class="update-modal-box">
+    <div class="update-modal-header">
+      <div class="update-icon">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+      </div>
+      <div>
+        <div class="update-title" id="updateTitle">发现新版本</div>
+        <div class="update-subtitle" id="updateSubtitle">新版本 v1.0.1 可用</div>
+      </div>
+    </div>
+    <div class="update-body" id="updateBody">
+      <p>新版本已发布，建议立即更新以获得更好的体验。</p>
+      <div class="update-progress" id="updateProgress" style="display:none">
+        <div class="update-progress-bar">
+          <div class="update-progress-fill" id="updateProgressFill" style="width:0%"></div>
+        </div>
+        <div class="update-progress-text" id="updateProgressText">下载中... 0%</div>
+      </div>
+    </div>
+    <div class="update-actions">
+      <button class="update-btn-cancel" id="updateBtnCancel" onclick="closeUpdateModal()">稍后提醒</button>
+      <button class="update-btn-confirm" id="updateBtnConfirm" onclick="startDownloadUpdate()">立即更新</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
+
+

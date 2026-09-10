@@ -1,0 +1,66 @@
+{
+  "name": "igdm-pro",
+  "version": "1.0.5",
+  "description": "智连 IG - Instagram 多账号自动化营销工具",
+  "author": "DirectFlow",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win",
+    "build:secure": "node build-safe.js",
+    "obfuscate": "node obfuscate.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "electron-updater": "^6.8.9",
+    "puppeteer-core": "^23.0.0"
+  },
+  "devDependencies": {
+    "7zip-bin": "^5.2.0",
+    "electron": "^32.0.0",
+    "electron-builder": "^26.15.3",
+    "javascript-obfuscator": "^5.6.0",
+    "jimp": "^1.6.1"
+  },
+  "build": {
+    "appId": "com.igdm.pro",
+    "productName": "DirectFlow IG",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "DirectFlow IG"
+    },
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://update.directflow.royalspl.xyz/"
+      }
+    ],
+    "files": [
+      "main.js",
+      "index.html",
+      "logo-full.png",
+      "logo.jpg",
+      "src/**/*",
+      "node_modules/**/*"
+    ]
+  }
+}
