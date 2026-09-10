@@ -14,7 +14,8 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.45.0",
     "electron-updater": "^6.8.9",
-    "puppeteer-core": "^23.0.0"
+    "puppeteer-core": "^23.0.0",
+    "socks": "^2.8.1"
   },
   "devDependencies": {
     "7zip-bin": "^5.2.0",
