@@ -291,7 +291,8 @@ async function launch(config = {}) {
       proxyServer = `127.0.0.1:${localPort}`;
       console.log(`[browser] Socks5代理已转本地HTTP: ${proxyServer}`);
     } else {
-      const proxyProtocol = proxyType === 'socks5' ? 'socks5://' : '';
+      // HTTP/HTTPS 代理需要 http:// 前缀，Socks5 无认证用 socks5://
+      const proxyProtocol = proxyType === 'socks5' ? 'socks5://' : 'http://';
       proxyServer = `${proxyProtocol}${proxyHost}:${config.proxyPort}`;
     }
     args.push(`--proxy-server=${proxyServer}`);
@@ -302,6 +303,7 @@ async function launch(config = {}) {
     console.log(`[browser] 启动浏览器: ${executablePath}`);
     console.log(`[browser] 代理: ${proxyServer || '直连'}`);
     console.log(`[browser] UserDataDir: ${userDataDir}`);
+    console.log(`[browser] 启动参数数量: ${args.length}`);
     browser = await puppeteer.launch({
       executablePath,
       headless: config.headless === false ? false : 'new',
@@ -313,12 +315,13 @@ async function launch(config = {}) {
       },
       ignoreHTTPSErrors: true,
       timeout: 30000,
-      dumpio: false,
+      dumpio: true,
     });
     console.log(`[browser] 启动成功`);
   } catch (e) {
     const errMsg = e.message || e.toString() || '未知错误';
     console.error(`[browser] 启动失败:`, e);
+    if (e.stderr) console.error(`[browser] stderr:`, e.stderr.toString());
     throw new Error(`浏览器启动失败: ${errMsg} (Chrome路径: ${executablePath}, 代理: ${proxyServer || '直连'})`);
   }
 
