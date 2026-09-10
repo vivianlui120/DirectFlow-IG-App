@@ -108,13 +108,13 @@ class Socks5HttpProxy {
       const options = {
         proxy: {
           host: this.socksHost,
-          port: this.socksPort,
+          port: parseInt(this.socksPort),
           type: 5,
           userId: this.socksUser,
           password: this.socksPass,
         },
         command: 'connect',
-        destination: { host, port },
+        destination: { host, port: parseInt(port) },
         timeout: 30000,
       };
 
