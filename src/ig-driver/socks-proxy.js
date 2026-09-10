@@ -81,7 +81,7 @@ class Socks5HttpProxy {
         proxy: proxyConfig,
         command: 'connect',
         destination: { host, port },
-        timeout: 30000,
+        timeout: 60000,
       };
 
       const { socket: remoteSocket } = await SocksClient.createConnection(options);
@@ -96,8 +96,8 @@ class Socks5HttpProxy {
       clientSocket.on('error', () => { try { remoteSocket.destroy(); } catch(e) {} });
       remoteSocket.on('error', () => { try { clientSocket.destroy(); } catch(e) {} });
     } catch (e) {
-      console.error(`[socks-proxy] CONNECT ${host}:${port} 失败: ${e.message}`);
-      console.error(`[socks-proxy] 代理配置: host=${this.socksHost}, port=${this.socksPort}, user=${this.socksUser ? '有' : '无'}, pass=${this.socksPass ? '有' : '无'}`);
+      const errMsg = e.message || e.toString() || '未知错误';
+      console.error(`[socks-proxy] CONNECT ${host}:${port} 失败: ${errMsg}`);
       clientSocket.write('HTTP/1.1 502 Bad Gateway\r\n\r\n');
       clientSocket.end();
     }
@@ -115,7 +115,7 @@ class Socks5HttpProxy {
         },
         command: 'connect',
         destination: { host, port: parseInt(port) },
-        timeout: 30000,
+        timeout: 60000,
       };
 
       const { socket: remoteSocket } = await SocksClient.createConnection(options);
