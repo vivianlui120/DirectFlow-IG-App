@@ -91,8 +91,10 @@ class Socks5HttpProxy {
       clientSocket.pipe(remoteSocket);
       remoteSocket.pipe(clientSocket);
 
-      clientSocket.on('close', () => remoteSocket.destroy());
-      remoteSocket.on('close', () => clientSocket.destroy());
+      clientSocket.on('close', () => { try { remoteSocket.destroy(); } catch(e) {} });
+      remoteSocket.on('close', () => { try { clientSocket.destroy(); } catch(e) {} });
+      clientSocket.on('error', () => { try { remoteSocket.destroy(); } catch(e) {} });
+      remoteSocket.on('error', () => { try { clientSocket.destroy(); } catch(e) {} });
     } catch (e) {
       console.error(`[socks-proxy] CONNECT ${host}:${port} 失败: ${e.message}`);
       console.error(`[socks-proxy] 代理配置: host=${this.socksHost}, port=${this.socksPort}, user=${this.socksUser ? '有' : '无'}, pass=${this.socksPass ? '有' : '无'}`);
@@ -122,8 +124,10 @@ class Socks5HttpProxy {
       clientSocket.pipe(remoteSocket);
       remoteSocket.pipe(clientSocket);
 
-      clientSocket.on('close', () => remoteSocket.destroy());
-      remoteSocket.on('close', () => clientSocket.destroy());
+      clientSocket.on('close', () => { try { remoteSocket.destroy(); } catch(e) {} });
+      remoteSocket.on('close', () => { try { clientSocket.destroy(); } catch(e) {} });
+      clientSocket.on('error', () => { try { remoteSocket.destroy(); } catch(e) {} });
+      remoteSocket.on('error', () => { try { clientSocket.destroy(); } catch(e) {} });
     } catch (e) {
       console.error(`[socks-proxy] HTTP ${host}:${port} 失败: ${e.message}`);
       clientSocket.write('HTTP/1.1 502 Bad Gateway\r\n\r\n');

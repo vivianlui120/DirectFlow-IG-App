@@ -411,20 +411,39 @@ function listInstances() {
 /**
  * 安全导航（带超时和重试）
  */
-async function safeGoto(accountId, url, waitUntil = 'networkidle2', timeout = 30000) {
+async function safeGoto(accountId, url, waitUntil = 'domcontentloaded', timeout = 60000) {
   const { page } = getInstance(accountId);
   console.log(`[browser] 打开页面: ${url}`);
-  try {
-    await page.goto(url, { waitUntil, timeout });
-    const title = await page.title();
-    const currentUrl = page.url();
-    console.log(`[browser] 页面加载成功: ${title} (${currentUrl})`);
-    return title;
-  } catch (e) {
-    const currentUrl = page.url();
-    console.error(`[browser] 页面加载失败: ${e.message} (当前URL: ${currentUrl})`);
-    throw e;
+  
+  let lastError = null;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await page.goto(url, { waitUntil, timeout });
+      const title = await page.title();
+      const currentUrl = page.url();
+      console.log(`[browser] 页面加载成功: ${title} (${currentUrl}) [尝试${attempt}]`);
+      return title;
+    } catch (e) {
+      lastError = e;
+      const currentUrl = page.url();
+      console.warn(`[browser] 页面加载失败(尝试${attempt}/3): ${e.message} (当前URL: ${currentUrl})`);
+      
+      // 如果是超时，可能页面已经部分加载，尝试继续
+      if (e.message.includes('timeout') || e.message.includes('Timeout')) {
+        console.log(`[browser] 超时但继续执行，当前URL: ${currentUrl}`);
+        return currentUrl;
+      }
+      
+      // 网络错误，等待后重试
+      if (attempt < 3) {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
   }
+  
+  console.error(`[browser] 页面加载最终失败: ${lastError.message}`);
+  // 即使失败也不抛出，让后续逻辑判断当前URL
+  return page.url();
 }
 
 /**
