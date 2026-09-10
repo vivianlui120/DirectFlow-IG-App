@@ -243,6 +243,13 @@ async function launch(config = {}) {
   const userDataDir = path.join(getSessionRoot(), accountId);
   if (!fs.existsSync(userDataDir)) fs.mkdirSync(userDataDir, { recursive: true });
 
+  // 清理浏览器锁文件，避免上次异常退出导致无法启动
+  const lockFiles = ['SingletonLock', 'SingletonSocket', 'SingletonCookie'];
+  for (const lf of lockFiles) {
+    const lp = path.join(userDataDir, lf);
+    try { if (fs.existsSync(lp)) fs.unlinkSync(lp); } catch (e) {}
+  }
+
   // 指纹（优先使用传入的，否则生成新的）
   const fingerprint = config.fingerprint || generateFingerprint();
 
@@ -264,11 +271,14 @@ async function launch(config = {}) {
     '--disable-renderer-backgrounding',
     '--disable-sync',
     '--disable-translate',
-    '--disable-features=TranslateUI',
+    '--disable-features=TranslateUI,VizDisplayCompositor',
     '--metrics-recording-only',
     '--no-pings',
     '--safebrowsing-disable-auto-update',
     '--disable-software-rasterizer',
+    '--no-zygote',
+    '--disable-ipc-flooding-protection',
+    '--disable-features=IsolateOrigins,site-per-process',
     // 时区匹配指纹
     `--timezone=${fingerprint.timezone}`,
   ];
