@@ -5,6 +5,7 @@
  */
 const igDriver = require('../ig-driver');
 const db = require('./db');
+const concurrency = require('./concurrency');
 
 // 排程器状态
 const schedulerState = {
@@ -16,6 +17,8 @@ const schedulerState = {
   scheduledTime: '09:00', // 默认每天9点
   scheduledDuration: 15,   // 默认15分钟
   currentAccount: null,
+  activeAccounts: [],       // 当前同时在养的账号
+  concurrency: null,        // 本次并发决策明细
   accountStats: {},
   logs: [],
   onStatusUpdate: null,    // 状态推送回调
@@ -41,6 +44,8 @@ function getStatus() {
     running: schedulerState.running,
     paused: schedulerState.paused,
     currentAccount: schedulerState.currentAccount,
+    activeAccounts: [...schedulerState.activeAccounts],
+    concurrency: schedulerState.concurrency,
     scheduledTime: schedulerState.scheduledTime,
     scheduledDuration: schedulerState.scheduledDuration,
     accountStats: { ...schedulerState.accountStats },
@@ -158,7 +163,7 @@ async function runAccountWarmup(account, strategy) {
     // 检查是否跨天，增加养号天数
     const today = new Date().toDateString();
     const lastWarmupDay = account.last_warmup_at ? new Date(account.last_warmup_at).toDateString() : null;
-    const newDays = lastWarmupDay !== today ? (account.warmup_days || 0) + 1 : (account.warmup_days || 0);
+    const newDays = lastWarpupDay !== today ? (account.warmup_days || 0) + 1 : (account.warmup_days || 0);
 
     db.updateAccount(accountId, {
       warmup_status: 'completed',
@@ -223,15 +228,24 @@ async function startBatchWarmup(options = {}) {
 
   addLog('系统', `共 ${accounts.length} 个账号，模式: ${options.mode || 'auto'}`);
 
+  // 按本机内存 / 核数自动计算并发数
+  const conc = concurrency.resolveConcurrency({ max: options.maxConcurrency });
+  schedulerState.concurrency = concurrency.snapshot(conc);
+  addLog('系统', `并发策略：${concurrency.describe(conc)}`, 'info');
+
   // 后台执行（不阻塞）
   (async () => {
-    for (const account of accounts) {
-      if (schedulerState.stopped) break;
+    await concurrency.runPool(accounts, conc.value, async (account) => {
+      // 暂停等待
       while (schedulerState.paused && !schedulerState.stopped) {
-        await new Promise(r => setTimeout(r, 1000));
+        await concurrency.sleep(1000);
       }
+      if (schedulerState.stopped) return;
 
       schedulerState.currentAccount = account.username;
+      if (!schedulerState.activeAccounts.includes(account.username)) {
+        schedulerState.activeAccounts.push(account.username);
+      }
 
       // 选择策略
       let strategy;
@@ -241,23 +255,26 @@ async function startBatchWarmup(options = {}) {
         strategy = db.getManualStrategy(options.mode, options.customParams);
       }
 
-      await runAccountWarmup(account, strategy);
-
-      // 账号间间隔
-      if (accounts.indexOf(account) < accounts.length - 1 && !schedulerState.stopped) {
-        const delay = 20000 + Math.random() * 20000;
-        addLog('系统', `等待 ${Math.round(delay/1000)} 秒后处理下一个账号`);
-        await new Promise(r => setTimeout(r, delay));
+      try {
+        await runAccountWarmup(account, strategy);
+      } finally {
+        // 该账号养号结束，释放并发位给下一个账号
+        schedulerState.activeAccounts = schedulerState.activeAccounts.filter(n => n !== account.username);
       }
-    }
+    }, {
+      isStopped: () => schedulerState.stopped,
+      // 每 30 秒错峰启动一个账号，避免同时登录触发风控
+      startGapMs: Number.isFinite(options.startGapMs) ? options.startGapMs : 30000,
+    });
 
     schedulerState.running = false;
     schedulerState.currentAccount = null;
+    schedulerState.activeAccounts = [];
     addLog('系统', '========== 批量养号完成 ==========', 'ok');
     if (schedulerState.onStatusUpdate) schedulerState.onStatusUpdate(getStatus());
   })();
 
-  return { success: true, accountCount: accounts.length };
+  return { success: true, accountCount: accounts.length, concurrency: conc.value };
 }
 
 /**
