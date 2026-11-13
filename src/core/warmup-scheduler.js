@@ -163,7 +163,7 @@ async function runAccountWarmup(account, strategy) {
     // 检查是否跨天，增加养号天数
     const today = new Date().toDateString();
     const lastWarmupDay = account.last_warmup_at ? new Date(account.last_warmup_at).toDateString() : null;
-    const newDays = lastWarpupDay !== today ? (account.warmup_days || 0) + 1 : (account.warmup_days || 0);
+    const newDays = lastWarmupDay !== today ? (account.warmup_days || 0) + 1 : (account.warmup_days || 0);
 
     db.updateAccount(accountId, {
       warmup_status: 'completed',
