@@ -13,6 +13,7 @@
  */
 const igDriver = require('../ig-driver');
 const db = require('./db');
+const concurrency = require('./concurrency');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
@@ -33,6 +34,7 @@ const dmState = {
   logs: [],
   onProgress: null,  // 进度回调函数
   imageRotateIndex: 0, // 图片轮换计数器（按批次轮换，避免连续发同一张）
+  concurrency: null,   // 本次任务的并发决策明细
 };
 
 const DAILY_LIMIT = 20; // 每账号每日最多发送20条
@@ -161,6 +163,7 @@ function getProgress() {
     total: dmState.total,
     accountStats: { ...dmState.accountStats },
     logs: dmState.logs.slice(0, 50),
+    concurrency: dmState.concurrency,
   };
 }
 
@@ -325,10 +328,17 @@ async function startMassDM(config) {
   }
   addLog('系统', `话术模板: ${templates.length} 套（支持Spin-Text随机轮换）`, 'info');
 
-  // 5. 启动所有账号的浏览器实例（headless静默）
-  addLog('系统', '启动浏览器实例（headless静默模式）...', 'info');
-  const launchedAccounts = [];
-  for (const acc of selectedAccounts) {
+  // 5. 按本机内存 / 核数自动计算并发数
+  const conc = concurrency.resolveConcurrency({ max: config.maxConcurrency });
+  dmState.concurrency = concurrency.snapshot(conc);
+  addLog('系统', `并发策略：${concurrency.describe(conc)}`, 'info');
+  addLog('系统', `启动浏览器实例（headless静默，最多同时 ${conc.value} 个）...`, 'info');
+
+  let startedCount = 0;
+  let failedCount = 0;
+
+  // 6. 并发池执行：同时最多 conc.value 个浏览器，账号跑完立即释放并补位
+  const poolPromise = concurrency.runPool(selectedAccounts, conc.value, async (acc) => {
     try {
       await igDriver.launch({
         accountId: acc.id,
@@ -339,37 +349,48 @@ async function startMassDM(config) {
         fingerprint: acc.fingerprint,
         headless: true, // 强制静默运行
       });
-      launchedAccounts.push(acc);
-      addLog(acc.username, '浏览器实例已启动', 'ok');
+      startedCount++;
+      addLog(acc.username, `浏览器实例已启动（第${startedCount}个，并发上限${conc.value}）`, 'ok');
     } catch (e) {
+      failedCount++;
       addLog(acc.username, `浏览器启动失败: ${e.message}`, 'error');
+      return;
     }
-    await new Promise(r => setTimeout(r, 1000));
-  }
-
-  if (launchedAccounts.length === 0) {
-    dmState.running = false;
-    return { success: false, error: '所有账号浏览器启动失败' };
-  }
-
-  // 6. 并发执行各账号发送（每个账号独立循环，互不影响）
-  const runPromises = launchedAccounts.map(acc =>
-    runAccount(acc.id, acc, distribution[acc.id], templates, config.dedupRule)
-  );
-
-  // 后台执行，不阻塞
-  Promise.all(runPromises).then(() => {
-    dmState.running = false;
-    addLog('系统', '========== 群发任务全部完成 ==========', 'ok');
-    addLog('系统', `总计：成功${dmState.total.success}，失败${dmState.total.failed}，跳过${dmState.total.skipped}`, 'ok');
-    // 关闭所有浏览器
-    for (const acc of launchedAccounts) {
-      try { igDriver.close(acc.id); } catch (e) {}
+    try {
+      await runAccount(acc.id, acc, distribution[acc.id], templates, config.dedupRule);
+    } finally {
+      // 跑完就关，释放内存，让下一个账号补位
+      try { await igDriver.close(acc.id); } catch (e) {}
     }
+  }, {
+    isStopped: () => dmState.stopped,
+    // 两次启动间隔，默认1秒，避免同时拉起多个浏览器
+    startGapMs: Number.isFinite(config.startGapMs) ? config.startGapMs : 1000,
+  });
+
+  // 后台执行，不阻塞界面
+  poolPromise.then(() => {
+    dmState.running = false;
+    if (startedCount === 0) {
+      addLog('系统', `所有账号浏览器启动失败（共${failedCount}个）`, 'error');
+    } else {
+      addLog('系统', '========== 群发任务全部完成 ==========', 'ok');
+      addLog('系统', `总计：成功${dmState.total.success}，失败${dmState.total.failed}，跳过${dmState.total.skipped}`, 'ok');
+      addLog('系统', `本次启动浏览器 ${startedCount} 个（启动失败 ${failedCount} 个），并发上限 ${conc.value}`, 'info');
+    }
+    if (dmState.onProgress) dmState.onProgress(getProgress());
+  }).catch((e) => {
+    dmState.running = false;
+    addLog('系统', `群发池异常: ${e.message}`, 'error');
     if (dmState.onProgress) dmState.onProgress(getProgress());
   });
 
-  return { success: true, totalLeads: leads.length, accounts: launchedAccounts.length };
+  return {
+    success: true,
+    totalLeads: leads.length,
+    accounts: selectedAccounts.length,
+    concurrency: conc.value,
+  };
 }
 
 /**
